@@ -1,6 +1,6 @@
 #include "../headers.h"
+#include "../message/message.h"
 
-volatile int subscribed = 0;
 char *defaultTopics[] = {"USERS", "GROUPS"};
 char userId[] = "";
 
@@ -59,22 +59,19 @@ void onConnect(void *context, MQTTAsync_successData5 *response)
     for (int i = 0; i < sizeof(defaultTopics) / sizeof(defaultTopics[0]); i++)
     {
         const char *topic = defaultTopics[i];
-        printf("Subscribing to topic %s with QoS %d...\n", topic, QOS);
         if ((rc = MQTTAsync_subscribe(client, topic, QOS, &opts)) != MQTTASYNC_SUCCESS)
         {
             printf("Failed to start subscribe for topic %s, return code %d\n", topic, rc);
         }
     }
 
-    char buffer[256];
-
-    sprintf(buffer, "%s_CONTROL", userId);
-    printf("Subscribing to topic %s with QoS %d...\n", buffer, QOS);
-
-    if ((rc = MQTTAsync_subscribe(client, buffer, QOS, &opts)) != MQTTASYNC_SUCCESS)
+    char newTopic[100];
+    sprintf(newTopic, "%s_CONTROL", userId);
+    if ((rc = MQTTAsync_subscribe(client, newTopic, QOS, &opts)) != MQTTASYNC_SUCCESS)
     {
-        printf("Failed to start subscribe for control topic, return code %d\n", rc);
+        printf("Failed to start subscribe for topic %s, return code %d\n", newTopic, rc);
     }
+
     printf("Subscribed successfully\n");
 }
 
@@ -85,8 +82,6 @@ void onConnectFailure(void *context, MQTTAsync_failureData5 *response)
 
 void onSubscribe(void *context, MQTTAsync_successData5 *response)
 {
-    printf("Subscribe succeeded\n");
-    subscribed = 1;
 }
 
 void onSubscribeFailure(void *context, MQTTAsync_failureData5 *response)
@@ -94,7 +89,7 @@ void onSubscribeFailure(void *context, MQTTAsync_failureData5 *response)
     printf("Subscribe failed, rc %d\n", response->code);
 }
 
-void setUserId(char id[])
+void updateUserId(char id[])
 {
     strcpy(userId, id);
 }

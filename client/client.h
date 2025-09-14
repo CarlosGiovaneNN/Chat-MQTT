@@ -7,6 +7,8 @@ int initClient(char userId[]);
 
 int isConnected();
 
+void closeClient();
+
 extern MQTTAsync client;
 
 #endif

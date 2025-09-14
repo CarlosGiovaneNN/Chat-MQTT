@@ -9,6 +9,8 @@ int initClient(char userId[])
     MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer5;
     int rc;
 
+    updateUserId(userId);
+
     create_opts.MQTTVersion = MQTTVERSION_5;
 
     if ((rc = MQTTAsync_createWithOptions(&client, ADDRESS, userId, MQTTCLIENT_PERSISTENCE_NONE, NULL, &create_opts)) !=
@@ -40,12 +42,21 @@ int initClient(char userId[])
         return EXIT_FAILURE;
     }
 
-    setUserId(userId);
-
     return 0;
 }
 
 int isConnected()
 {
     return MQTTAsync_isConnected(client);
+}
+
+void closeClient()
+{
+    MQTTAsync_disconnectOptions disc_opts = MQTTAsync_disconnectOptions_initializer5;
+    disc_opts.onSuccess5 = NULL;
+    disc_opts.onFailure5 = NULL;
+    disc_opts.context = client;
+
+    MQTTAsync_disconnect(client, &disc_opts);
+    MQTTAsync_destroy(&client);
 }
