@@ -1,0 +1,21 @@
+CC = gcc
+CFLAGS = -Wall -I. -g
+LDFLAGS = -lpaho-mqtt3as
+
+SRCS = main.c $(wildcard client/*.c)
+OBJS = $(SRCS:.c=.o)
+TARGET = main
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
+
+client/%.o: client/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJS) $(TARGET)
