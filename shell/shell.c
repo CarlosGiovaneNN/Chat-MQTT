@@ -1,5 +1,6 @@
 #include "../client/client.h"
 #include "../headers.h"
+#include "../user/user.h"
 
 void *run_shell(void *arg)
 {
@@ -14,8 +15,9 @@ void *run_shell(void *arg)
         printf("------------------\n");
 
         char buffer[256];
+        fgets(buffer, sizeof(buffer), stdin);
 
-        scanf("%[^\n]", buffer);
+        buffer[strcspn(buffer, "\n")] = '\0';
 
         if (strcmp(buffer, "1") == 0)
         {
@@ -27,7 +29,7 @@ void *run_shell(void *arg)
         }
         else if (strcmp(buffer, "3") == 0)
         {
-            // listUsers();
+            listUsers();
         }
         else if (strcmp(buffer, "4") == 0)
         {

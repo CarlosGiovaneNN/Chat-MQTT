@@ -13,8 +13,4 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTAsync_message *me
 
 void connlost(void *context, char *cause);
 
-void updateUserId(char id[]);
-
-extern char userId[];
-
 #endif

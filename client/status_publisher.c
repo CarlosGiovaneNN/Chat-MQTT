@@ -1,7 +1,7 @@
 #include "../headers.h"
 #include "../message/message.h"
+#include "../user/user.h"
 #include "client.h"
-#include "mqtt.h"
 
 void *run_status_publisher(void *arg)
 {

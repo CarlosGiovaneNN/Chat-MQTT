@@ -1,4 +1,5 @@
 #include "../headers.h"
+#include "../user/user.h"
 #include "mqtt.h"
 
 MQTTAsync client;
@@ -50,13 +51,22 @@ int isConnected()
     return MQTTAsync_isConnected(client);
 }
 
+void onDisconnectSuccess(void *context, MQTTAsync_successData5 *response)
+{
+    printf("Desconectado do broker.\n");
+}
+
 void closeClient()
 {
     MQTTAsync_disconnectOptions disc_opts = MQTTAsync_disconnectOptions_initializer5;
-    disc_opts.onSuccess5 = NULL;
-    disc_opts.onFailure5 = NULL;
+    disc_opts.onSuccess5 = onDisconnectSuccess;
     disc_opts.context = client;
 
-    MQTTAsync_disconnect(client, &disc_opts);
+    int rc = MQTTAsync_disconnect(client, &disc_opts);
+    if (rc != MQTTASYNC_SUCCESS)
+    {
+        printf("Erro ao desconectar: %d\n", rc);
+    }
+
     MQTTAsync_destroy(&client);
 }

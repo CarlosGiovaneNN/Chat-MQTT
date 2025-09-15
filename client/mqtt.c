@@ -1,8 +1,8 @@
 #include "../headers.h"
 #include "../message/message.h"
+#include "../user/user.h"
 
 char *defaultTopics[] = {"USERS", "GROUPS"};
-char userId[] = "";
 
 void onConnect(void *context, MQTTAsync_successData5 *response);
 void onConnectFailure(void *context, MQTTAsync_failureData5 *response);
@@ -34,12 +34,26 @@ void connlost(void *context, char *cause)
 
 int msgarrvd(void *context, char *topicName, int topicLen, MQTTAsync_message *message)
 {
-    printf("Message arrived\n");
-    printf("     topic: %s\n", topicName);
-    printf("   message: %.*s\n", message->payloadlen, (char *)message->payload);
+
+    add_unread_message(message, topicName);
+
+    if (strcmp(topicName, "USERS") == 0)
+    {
+        add_user(message->payload);
+
+        if (check_status(message->payload) == 1)
+        {
+            change_status(message->payload, 1);
+        }
+        else if (check_status(message->payload) == 0)
+        {
+            change_status(message->payload, 0);
+        }
+    }
 
     MQTTAsync_freeMessage(&message);
     MQTTAsync_free(topicName);
+
     return 1;
 }
 
@@ -87,9 +101,4 @@ void onSubscribe(void *context, MQTTAsync_successData5 *response)
 void onSubscribeFailure(void *context, MQTTAsync_failureData5 *response)
 {
     printf("Subscribe failed, rc %d\n", response->code);
-}
-
-void updateUserId(char id[])
-{
-    strcpy(userId, id);
 }
