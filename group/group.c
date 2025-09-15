@@ -1,7 +1,8 @@
-#include "group.h"
 #include "../headers.h"
+
 #include "../message/message.h"
 #include "../user/user.h"
+#include "group.h"
 
 Group *groups = NULL;
 
@@ -85,6 +86,107 @@ int toggle_participant_status(Group *group, char *username)
     return 0;
 }
 
+void add_group_by_message(char *message)
+{
+    if (!message || strlen(message) == 0)
+        return;
+
+    Group *group = malloc(sizeof(Group));
+    if (!group)
+        return;
+    group->participants = NULL;
+
+    char *ptr = strstr(message, "{ Group: ");
+    if (ptr)
+    {
+        ptr += strlen("{ Group: ");
+        char *end = strchr(ptr, ',');
+        if (end)
+        {
+            while (end > ptr && isspace(*(end - 1)))
+                end--;
+            size_t len = end - ptr;
+            strncpy(group->name, ptr, len);
+            group->name[len] = 0;
+        }
+    }
+
+    ptr = strstr(message, "Leader: ");
+    if (ptr)
+    {
+        ptr += strlen("Leader: ");
+        char *end = strchr(ptr, ',');
+        if (end)
+        {
+            while (end > ptr && isspace(*(end - 1)))
+                end--;
+            size_t len = end - ptr;
+            strncpy(group->leader, ptr, len);
+            group->leader[len] = 0;
+        }
+    }
+
+    ptr = strstr(message, "Participants: [");
+    if (ptr)
+    {
+        ptr += strlen("Participants: [");
+        char *end = strchr(ptr, ']');
+        if (end)
+        {
+            *end = 0;
+            char *token = strtok(ptr, ";");
+            while (token)
+            {
+                while (*token && isspace(*token))
+                    token++;
+                char *tend = token + strlen(token) - 1;
+                while (tend > token && isspace(*tend))
+                {
+                    *tend = 0;
+                    tend--;
+                }
+
+                char username[100];
+
+                strcpy(username, token);
+
+                add_participant(group, username, 1);
+                token = strtok(NULL, ";");
+            }
+        }
+    }
+
+    group->next = groups;
+    groups = group;
+}
+
+void create_group_message()
+{
+    char group_name[254];
+    snprintf(group_name, sizeof(group_name), "{ Group: %s,", groups->name);
+
+    char leader[254];
+    snprintf(leader, sizeof(leader), "Leader: %s, Participants: ", groups->leader);
+
+    char participants[1024] = "[";
+    for (Participant *p = groups->participants; p != NULL; p = p->next)
+    {
+        strncat(participants, p->username, sizeof(participants) - strlen(participants) - 1);
+        strncat(participants, ";", sizeof(participants) - strlen(participants) - 1);
+    }
+    strncat(participants, "],}", sizeof(participants) - strlen(participants) - 1);
+
+    size_t len = strlen(group_name) + strlen(leader) + strlen(participants) + 1;
+    char *message = malloc(len);
+    if (!message)
+        return;
+
+    snprintf(message, len, "%s%s%s", group_name, leader, participants);
+
+    send_message(message, "GROUPS");
+    free(message);
+}
+
 void create_group_menu()
 {
     printf("\nDigite o nome do grupo: ");
@@ -163,6 +265,8 @@ void create_group_menu()
 
     save_group(get_group_by_index(0));
     printf("\nGrupo criado com sucesso!\n\n\n");
+
+    create_group_message();
 }
 
 void load_groups_from_file()

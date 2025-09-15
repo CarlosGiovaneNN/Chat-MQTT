@@ -1,4 +1,6 @@
 #include "../headers.h"
+
+#include "../group/group.h"
 #include "../message/message.h"
 #include "../user/user.h"
 
@@ -51,7 +53,12 @@ int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *m
         }
     }
 
-    printf("%s\n", (char *)message->payload);
+    if (strcmp(topic_name, "GROUPS") == 0)
+    {
+        add_group_by_message(message->payload);
+    }
+
+    //    printf("%s\n", (char *)message->payload);
 
     MQTTAsync_freeMessage(&message);
     MQTTAsync_free(topic_name);

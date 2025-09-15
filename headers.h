@@ -1,6 +1,7 @@
 #ifndef HEADERS_H
 #define HEADERS_H
 
+#include <ctype.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>

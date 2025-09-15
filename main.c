@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
 
     init_client(argv[1]);
     load_users_from_file();
+    load_groups_from_file();
 
     while (!is_connected())
     {
