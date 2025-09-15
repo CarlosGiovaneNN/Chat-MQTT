@@ -51,20 +51,23 @@ void add_user(char username[])
     if (strstr(username, "is connected"))
         status = 1;
 
-    remove_substring(username, " is connected");
-    remove_substring(username, " is disconnected");
+    char name[256];
+    strcpy(name, username);
 
-    if (strcmp(username, userId) == 0)
+    remove_substring(name, " is connected");
+    remove_substring(name, " is disconnected");
+
+    if (strcmp(name, userId) == 0)
         return;
 
-    if (find_user(username))
+    if (find_user(name))
         return;
 
     Users *new_user = malloc(sizeof(Users));
     if (!new_user)
         return;
 
-    strcpy(new_user->username, username);
+    strcpy(new_user->username, name);
     new_user->online = status;
     new_user->next = users;
     users = new_user;
@@ -72,15 +75,17 @@ void add_user(char username[])
 
 void change_status(char username[], int status)
 {
+    char name[256];
+    strcpy(name, username);
 
-    remove_substring(username, " is connected");
-    remove_substring(username, " is disonnected");
+    remove_substring(name, " is connected");
+    remove_substring(name, " is disconnected");
 
     Users *current = users;
 
     while (current != NULL)
     {
-        if (strcmp(current->username, username) == 0)
+        if (strcmp(current->username, name) == 0)
         {
             current->online = status;
             return;

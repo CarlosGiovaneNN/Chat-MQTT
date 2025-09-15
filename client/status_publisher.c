@@ -16,8 +16,5 @@ void *run_status_publisher(void *arg)
         sleep(10);
     }
 
-    sprintf(newMessage, "%s is disconnected", userId);
-    send_message(newMessage, "USERS");
-
     return NULL;
 }

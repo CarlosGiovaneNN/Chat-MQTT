@@ -12,4 +12,6 @@
 #define ADDRESS "tcp://localhost:1883"
 #define QOS 1
 
+extern pthread_t thread_status, thread_shell;
+
 #endif

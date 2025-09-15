@@ -12,14 +12,23 @@ void onSendFailure(void *context, MQTTAsync_failureData5 *response);
 
 void onSend(void *context, MQTTAsync_successData5 *response)
 {
-    printf("Message delivered successfully\n");
+    SendContext *ctx = (SendContext *)context;
+
+    if (strcmp(ctx->topic, "USERS") != 0)
+        printf("Message delivered successfully\n");
+
     deliveredtoken = 1;
+    free(ctx);
 }
 
 void onSendFailure(void *context, MQTTAsync_failureData5 *response)
 {
+    SendContext *ctx = (SendContext *)context;
+
     printf("Failed to deliver message, rc %d\n", response->code);
+
     deliveredtoken = 1;
+    free(ctx);
 }
 
 int send_message(char msg[], char topic[])
@@ -38,15 +47,20 @@ int send_message(char msg[], char topic[])
     pubmsg.qos = QOS;
     pubmsg.retained = 0;
 
+    SendContext *ctx = malloc(sizeof(SendContext));
+    ctx->client = client;
+    strcpy(ctx->topic, topic);
+
     opts.onSuccess5 = onSend;
     opts.onFailure5 = onSendFailure;
-    opts.context = client;
+    opts.context = ctx;
     deliveredtoken = 0;
 
     if ((rc = MQTTAsync_sendMessage(client, topic, &pubmsg, &opts)) != MQTTASYNC_SUCCESS)
     {
         printf("Failed to start sendMessage, return code %d\n", rc);
         MQTTAsync_destroy(&client);
+        free(ctx);
         return EXIT_FAILURE;
     }
 
