@@ -15,7 +15,7 @@ typedef struct
 {
     MQTTAsync client;
     char topic[100];
-} SendContext;
+} Send_Context;
 
 int send_message(char msg[], char topic[]);
 void add_unread_message(MQTTAsync_message *message, char topic[]);

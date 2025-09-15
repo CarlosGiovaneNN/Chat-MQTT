@@ -2,7 +2,22 @@
 #include "../headers.h"
 
 Users *users = NULL;
-char userId[] = "";
+char user_id[] = "";
+char file_users[] = "user/users.txt";
+
+Users *get_user_by_index(int index)
+{
+    int count = 0;
+    for (Users *current = users; current != NULL; current = current->next)
+    {
+        if (count == index)
+        {
+            return current;
+        }
+        count++;
+    }
+    return NULL;
+}
 
 void remove_substring(char *str, const char *sub)
 {
@@ -44,6 +59,37 @@ void print_users()
     }
 }
 
+void load_users_from_file()
+{
+    FILE *f = fopen(file_users, "r");
+    if (!f)
+        return;
+
+    char line[256];
+    while (fgets(line, sizeof(line), f))
+    {
+        line[strcspn(line, "\n")] = 0;
+
+        if (strlen(line) > 0)
+        {
+            if (!find_user(line))
+                add_user(line);
+        }
+    }
+
+    fclose(f);
+}
+
+void save_user_to_file(char *username)
+{
+    FILE *f = fopen(file_users, "a");
+    if (!f)
+        return;
+
+    fprintf(f, "%s\n", username);
+    fclose(f);
+}
+
 void add_user(char username[])
 {
     int status = 0;
@@ -57,7 +103,7 @@ void add_user(char username[])
     remove_substring(name, " is connected");
     remove_substring(name, " is disconnected");
 
-    if (strcmp(name, userId) == 0)
+    if (strcmp(name, user_id) == 0)
         return;
 
     if (find_user(name))
@@ -71,6 +117,8 @@ void add_user(char username[])
     new_user->online = status;
     new_user->next = users;
     users = new_user;
+
+    save_user_to_file(name);
 }
 
 void change_status(char username[], int status)
@@ -107,7 +155,7 @@ int check_status(const char *msg)
     return -1; // nenhum dos dois
 }
 
-void listUsers()
+void list_users()
 {
     Users *current = users;
 
@@ -128,7 +176,7 @@ void listUsers()
     printf("\n");
 }
 
-void updateUserId(char id[])
+void update_user_id(char id[])
 {
-    strcpy(userId, id);
+    strcpy(user_id, id);
 }

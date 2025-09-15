@@ -3,11 +3,11 @@
 
 #include "MQTTAsync.h"
 
-int initClient(char userId[]);
+int init_client(char user_id[]);
 
-int isConnected();
+int is_connected();
 
-void closeClient();
+void close_client();
 
 extern MQTTAsync client;
 

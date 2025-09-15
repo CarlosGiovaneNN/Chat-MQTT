@@ -5,13 +5,13 @@
 
 void *run_status_publisher(void *arg)
 {
-    char newMessage[100];
+    char new_message[100];
 
-    while (isConnected())
+    while (is_connected())
     {
-        sprintf(newMessage, "%s is connected", userId);
+        sprintf(new_message, "%s is connected", user_id);
 
-        send_message(newMessage, "USERS");
+        send_message(new_message, "USERS");
 
         sleep(10);
     }

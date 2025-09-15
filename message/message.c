@@ -7,12 +7,12 @@ volatile int deliveredtoken = 0;
 Messages *unread_messages = NULL;
 Messages *all_received_messages = NULL;
 
-void onSend(void *context, MQTTAsync_successData5 *response);
-void onSendFailure(void *context, MQTTAsync_failureData5 *response);
+void on_send(void *context, MQTTAsync_successData5 *response);
+void on_send_failure(void *context, MQTTAsync_failureData5 *response);
 
-void onSend(void *context, MQTTAsync_successData5 *response)
+void on_send(void *context, MQTTAsync_successData5 *response)
 {
-    SendContext *ctx = (SendContext *)context;
+    Send_Context *ctx = (Send_Context *)context;
 
     if (strcmp(ctx->topic, "USERS") != 0)
         printf("Message delivered successfully\n");
@@ -21,9 +21,9 @@ void onSend(void *context, MQTTAsync_successData5 *response)
     free(ctx);
 }
 
-void onSendFailure(void *context, MQTTAsync_failureData5 *response)
+void on_send_failure(void *context, MQTTAsync_failureData5 *response)
 {
-    SendContext *ctx = (SendContext *)context;
+    Send_Context *ctx = (Send_Context *)context;
 
     printf("Failed to deliver message, rc %d\n", response->code);
 
@@ -47,12 +47,12 @@ int send_message(char msg[], char topic[])
     pubmsg.qos = QOS;
     pubmsg.retained = 0;
 
-    SendContext *ctx = malloc(sizeof(SendContext));
+    Send_Context *ctx = malloc(sizeof(Send_Context));
     ctx->client = client;
     strcpy(ctx->topic, topic);
 
-    opts.onSuccess5 = onSend;
-    opts.onFailure5 = onSendFailure;
+    opts.onSuccess5 = on_send;
+    opts.onFailure5 = on_send_failure;
     opts.context = ctx;
     deliveredtoken = 0;
 

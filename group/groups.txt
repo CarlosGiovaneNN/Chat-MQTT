@@ -1,0 +1,15 @@
+Group: TESTE
+Leader: user1
+Participants:
+- user2 (pending)
+
+Group: teste 
+Leader: user2
+Participants:
+- user1 (pending)
+
+Group: novo grupo
+Leader: user1
+Participants:
+- user2 (pending)
+

@@ -2,12 +2,12 @@
 #include "../message/message.h"
 #include "../user/user.h"
 
-char *defaultTopics[] = {"USERS", "GROUPS"};
+char *default_topics[] = {"USERS", "GROUPS"};
 
-void onConnect(void *context, MQTTAsync_successData5 *response);
-void onConnectFailure(void *context, MQTTAsync_failureData5 *response);
-void onSubscribe(void *context, MQTTAsync_successData5 *response);
-void onSubscribeFailure(void *context, MQTTAsync_failureData5 *response);
+void on_connect(void *context, MQTTAsync_successData5 *response);
+void on_connect_failure(void *context, MQTTAsync_failureData5 *response);
+void on_subscribe(void *context, MQTTAsync_successData5 *response);
+void on_subscribe_failure(void *context, MQTTAsync_failureData5 *response);
 
 void connlost(void *context, char *cause)
 {
@@ -22,8 +22,8 @@ void connlost(void *context, char *cause)
     printf("Reconnecting...\n");
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleanstart = 1;
-    conn_opts.onSuccess5 = onConnect;
-    conn_opts.onFailure5 = onConnectFailure;
+    conn_opts.onSuccess5 = on_connect;
+    conn_opts.onFailure5 = on_connect_failure;
     conn_opts.context = client;
 
     if ((rc = MQTTAsync_connect(client, &conn_opts)) != MQTTASYNC_SUCCESS)
@@ -32,12 +32,12 @@ void connlost(void *context, char *cause)
     }
 }
 
-int msgarrvd(void *context, char *topicName, int topicLen, MQTTAsync_message *message)
+int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *message)
 {
 
-    add_unread_message(message, topicName);
+    add_unread_message(message, topic_name);
 
-    if (strcmp(topicName, "USERS") == 0)
+    if (strcmp(topic_name, "USERS") == 0)
     {
         add_user(message->payload);
 
@@ -51,30 +51,30 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTAsync_message *me
         }
     }
 
-    // printf("%s\n", (char *)message->payload);
+    printf("%s\n", (char *)message->payload);
 
     MQTTAsync_freeMessage(&message);
-    MQTTAsync_free(topicName);
+    MQTTAsync_free(topic_name);
 
     return 1;
 }
 
-void onConnect(void *context, MQTTAsync_successData5 *response)
+void on_connect(void *context, MQTTAsync_successData5 *response)
 {
     MQTTAsync client = (MQTTAsync)context;
     MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
 
     printf("Connected successfully\n");
 
-    opts.onSuccess5 = onSubscribe;
-    opts.onFailure5 = onSubscribeFailure;
+    opts.onSuccess5 = on_subscribe;
+    opts.onFailure5 = on_subscribe_failure;
     opts.context = client;
 
     int rc;
 
-    for (int i = 0; i < sizeof(defaultTopics) / sizeof(defaultTopics[0]); i++)
+    for (int i = 0; i < sizeof(default_topics) / sizeof(default_topics[0]); i++)
     {
-        const char *topic = defaultTopics[i];
+        const char *topic = default_topics[i];
         if ((rc = MQTTAsync_subscribe(client, topic, QOS, &opts)) != MQTTASYNC_SUCCESS)
         {
             printf("Failed to start subscribe for topic %s, return code %d\n", topic, rc);
@@ -82,7 +82,7 @@ void onConnect(void *context, MQTTAsync_successData5 *response)
     }
 
     char newTopic[100];
-    sprintf(newTopic, "%s_CONTROL", userId);
+    sprintf(newTopic, "%s_CONTROL", user_id);
     if ((rc = MQTTAsync_subscribe(client, newTopic, QOS, &opts)) != MQTTASYNC_SUCCESS)
     {
         printf("Failed to start subscribe for topic %s, return code %d\n", newTopic, rc);
@@ -91,16 +91,16 @@ void onConnect(void *context, MQTTAsync_successData5 *response)
     printf("Subscribed successfully\n");
 }
 
-void onConnectFailure(void *context, MQTTAsync_failureData5 *response)
+void on_connect_failure(void *context, MQTTAsync_failureData5 *response)
 {
     printf("Connect failed, rc %d\n", response->code);
 }
 
-void onSubscribe(void *context, MQTTAsync_successData5 *response)
+void on_subscribe(void *context, MQTTAsync_successData5 *response)
 {
 }
 
-void onSubscribeFailure(void *context, MQTTAsync_failureData5 *response)
+void on_subscribe_failure(void *context, MQTTAsync_failureData5 *response)
 {
     printf("Subscribe failed, rc %d\n", response->code);
 }

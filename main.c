@@ -1,7 +1,9 @@
 #include "client/client.h"
 #include "client/status_publisher.h"
+#include "group/group.h"
 #include "headers.h"
 #include "shell/shell.h"
+#include "user/user.h"
 
 pthread_t thread_status, thread_shell;
 
@@ -13,9 +15,10 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    initClient(argv[1]);
+    init_client(argv[1]);
+    load_users_from_file();
 
-    while (!isConnected())
+    while (!is_connected())
     {
         usleep(100000);
     }
