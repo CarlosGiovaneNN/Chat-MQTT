@@ -1,9 +1,21 @@
-#include "user.h"
+// #include "user.h"
 #include "../headers.h"
 
 Users *users = NULL;
 char user_id[] = "";
 char file_users[] = "user/users.txt";
+
+Users *get_user_by_index(int index);
+void remove_substring(char *str, const char *sub);
+int find_user(char username[]);
+void print_users();
+void load_users_from_file();
+int user_exists_in_file(char *username);
+void save_user_to_file(char *username);
+void add_user(char username[]);
+void change_status(char username[], int status);
+void list_users();
+void update_user_id(char id[]);
 
 Users *get_user_by_index(int index)
 {
@@ -80,8 +92,32 @@ void load_users_from_file()
     fclose(f);
 }
 
+int user_exists_in_file(char *username)
+{
+    FILE *f = fopen(file_users, "r");
+    if (!f)
+        return 0;
+
+    char line[256];
+    while (fgets(line, sizeof(line), f))
+    {
+        line[strcspn(line, "\n")] = 0;
+        if (strcmp(line, username) == 0)
+        {
+            fclose(f);
+            return 1;
+        }
+    }
+
+    fclose(f);
+    return 0;
+}
+
 void save_user_to_file(char *username)
 {
+    if (user_exists_in_file(username))
+        return;
+
     FILE *f = fopen(file_users, "a");
     if (!f)
         return;

@@ -2,7 +2,7 @@
 
 #include "../message/message.h"
 #include "../user/user.h"
-#include "group.h"
+// #include "group.h"
 
 Group *groups = NULL;
 

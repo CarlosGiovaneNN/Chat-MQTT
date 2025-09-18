@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -I. -I./client -I./message -g
 LDFLAGS = -lpaho-mqtt3as
 
-SRCS = main.c $(wildcard client/*.c) $(wildcard message/*.c) $(wildcard shell/*.c) $(wildcard user/*.c) $(wildcard group/*.c)
+SRCS = main.c $(wildcard client/*.c) $(wildcard message/*.c) $(wildcard shell/*.c) $(wildcard user/*.c) $(wildcard group/*.c) $(wildcard threads/*.c)
 OBJS = $(SRCS:.c=.o)
 TARGET = main
 

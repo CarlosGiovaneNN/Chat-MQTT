@@ -1,12 +1,7 @@
 #ifndef USER_H
 #define USER_H
 
-typedef struct Users
-{
-    char username[100];
-    int online;
-    struct Users *next;
-} Users;
+#include "../headers.h"
 
 void add_user(char username[]);
 int check_status(const char *msg);

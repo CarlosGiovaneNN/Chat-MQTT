@@ -23,7 +23,7 @@ void connlost(void *context, char *cause)
 
     printf("Reconnecting...\n");
     conn_opts.keepAliveInterval = 20;
-    conn_opts.cleanstart = 1;
+    conn_opts.cleanstart = 0;
     conn_opts.onSuccess5 = on_connect;
     conn_opts.onFailure5 = on_connect_failure;
     conn_opts.context = client;
@@ -58,7 +58,7 @@ int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *m
         add_group_by_message(message->payload);
     }
 
-    //    printf("%s\n", (char *)message->payload);
+    printf("%s\n", (char *)message->payload);
 
     MQTTAsync_freeMessage(&message);
     MQTTAsync_free(topic_name);
