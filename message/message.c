@@ -45,7 +45,7 @@ int send_message(char msg[], char topic[])
     pubmsg.payload = (void *)payload;
     pubmsg.payloadlen = (int)strlen(payload);
     pubmsg.qos = QOS;
-    pubmsg.retained = 0;
+    pubmsg.retained = 1;
 
     Send_Context *ctx = malloc(sizeof(Send_Context));
     ctx->client = client;
