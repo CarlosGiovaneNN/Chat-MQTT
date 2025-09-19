@@ -2,7 +2,6 @@
 
 #include "../message/message.h"
 #include "../user/user.h"
-// #include "group.h"
 
 Group *groups = NULL;
 
@@ -96,11 +95,11 @@ void add_group_by_message(char *message)
         return;
     group->participants = NULL;
 
-    char *ptr = strstr(message, "{ Group: ");
+    char *ptr = strstr(message, "Group:<");
     if (ptr)
     {
-        ptr += strlen("{ Group: ");
-        char *end = strchr(ptr, ',');
+        ptr += strlen("Group:<");
+        char *end = strstr(ptr, ">;");
         if (end)
         {
             while (end > ptr && isspace(*(end - 1)))
@@ -111,11 +110,11 @@ void add_group_by_message(char *message)
         }
     }
 
-    ptr = strstr(message, "Leader: ");
+    ptr = strstr(message, "Leader:<");
     if (ptr)
     {
-        ptr += strlen("Leader: ");
-        char *end = strchr(ptr, ',');
+        ptr += strlen("Leader:<");
+        char *end = strstr(ptr, ">;");
         if (end)
         {
             while (end > ptr && isspace(*(end - 1)))
@@ -126,10 +125,10 @@ void add_group_by_message(char *message)
         }
     }
 
-    ptr = strstr(message, "Participants: [");
+    ptr = strstr(message, "Participants:[");
     if (ptr)
     {
-        ptr += strlen("Participants: [");
+        ptr += strlen("Participants:[");
         char *end = strchr(ptr, ']');
         if (end)
         {
@@ -163,10 +162,10 @@ void add_group_by_message(char *message)
 void create_group_message()
 {
     char group_name[254];
-    snprintf(group_name, sizeof(group_name), "{ Group: %s,", groups->name);
+    snprintf(group_name, sizeof(group_name), "Group:<%s>;", groups->name);
 
     char leader[254];
-    snprintf(leader, sizeof(leader), "Leader: %s, Participants: ", groups->leader);
+    snprintf(leader, sizeof(leader), "Leader:<%s>;Participants:", groups->leader);
 
     char participants[1024] = "[";
     for (Participant *p = groups->participants; p != NULL; p = p->next)
@@ -174,7 +173,7 @@ void create_group_message()
         strncat(participants, p->username, sizeof(participants) - strlen(participants) - 1);
         strncat(participants, ";", sizeof(participants) - strlen(participants) - 1);
     }
-    strncat(participants, "],}", sizeof(participants) - strlen(participants) - 1);
+    strncat(participants, "];", sizeof(participants) - strlen(participants) - 1);
 
     size_t len = strlen(group_name) + strlen(leader) + strlen(participants) + 1;
     char *message = malloc(len);
@@ -250,7 +249,7 @@ void create_group_menu()
             char new_message[256];
             char topic[256];
 
-            sprintf(new_message, "%s ask to join %s", user_id, group_name);
+            sprintf(new_message, "%d;%s;", IDCONTROL_GROUP_INVITATION, group_name);
             sprintf(topic, "%s_CONTROL", participant->username);
 
             send_message(new_message, topic);

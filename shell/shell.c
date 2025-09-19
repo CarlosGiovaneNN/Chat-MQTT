@@ -1,7 +1,9 @@
-#include "../client/client.h"
 #include "../headers.h"
 
+#include "../client/client.h"
+
 #include "../group/group.h"
+#include "../message/message.h"
 #include "../user/user.h"
 
 void *run_shell(void *arg)
@@ -46,7 +48,7 @@ void *run_shell(void *arg)
         }
         else if (strcmp(buffer, "6") == 0)
         {
-            // list_control_msg();
+            list_control_msg();
         }
         else if (strcmp(buffer, "7") == 0)
         {

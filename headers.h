@@ -6,19 +6,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "MQTTAsync.h"
 
 #define ADDRESS "tcp://localhost:1883"
-#define QOS 2
+#define QOS 1
 
-#define GROUP_INVITATION_TYPE 1
-#define GROUP_INVITATION_ACCEPTED_TYPE 2
-#define GROUP_INVITATION_REJECTED_TYPE 3
-#define USER_CHAT_INVITATION_TYPE 4
-#define USER_CHAT_INVITATION_ACCEPTED_TYPE 5
-#define USER_CHAT_INVITATION_REJECTED_TYPE 6
+// Topic = ID_CONTROL
+#define IDCONTROL_GROUP_INVITATION 1 // de qual grupo
+#define IDCONTROL_CHAT_INVITATION 2
+#define IDCONTROL_CHAT_INVITATION_ACCEPTED 3
+#define IDCONTROL_CHAT_INVITATION_REJECTED 4
+
+// Topic = GROUPS
+#define GROUP_INVITATION_ACCEPTED 1
+#define GROUP_INVITATION_REJECTED 2
+
+// user-time:<int>;<nome do grupo>;
 
 typedef struct Participant
 {

@@ -1,0 +1,7 @@
+Group: teste frupo
+Leader: userDOIS
+Participants:
+- user4 (pending)
+- userUM (pending)
+- user (pending)
+

@@ -5,8 +5,8 @@
 // #include "../headers.h"
 
 int send_message(char msg[], char topic[]);
-void add_unread_message(MQTTAsync_message *message, char topic[]);
-void add_all_received_message(MQTTAsync_message *message, char topic[]);
 void print_all_received_messages();
+void on_recv_message(MQTTAsync_message *message, char *topic);
+void list_control_msg();
 
 #endif

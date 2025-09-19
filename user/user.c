@@ -2,7 +2,7 @@
 #include "../headers.h"
 
 Users *users = NULL;
-char user_id[] = "";
+char user_id[100] = "";
 char file_users[] = "user/users.txt";
 
 Users *get_user_by_index(int index);
@@ -130,46 +130,31 @@ void add_user(char username[])
 {
     int status = 0;
 
-    if (strstr(username, "is connected"))
-        status = 1;
-
-    char name[256];
-    strcpy(name, username);
-
-    remove_substring(name, " is connected");
-    remove_substring(name, " is disconnected");
-
-    if (strcmp(name, user_id) == 0)
+    if (strcmp(username, user_id) == 0)
         return;
 
-    if (find_user(name))
+    if (find_user(username))
         return;
 
     Users *new_user = malloc(sizeof(Users));
     if (!new_user)
         return;
 
-    strcpy(new_user->username, name);
+    strcpy(new_user->username, username);
     new_user->online = status;
     new_user->next = users;
     users = new_user;
 
-    save_user_to_file(name);
+    save_user_to_file(username);
 }
 
 void change_status(char username[], int status)
 {
-    char name[256];
-    strcpy(name, username);
-
-    remove_substring(name, " is connected");
-    remove_substring(name, " is disconnected");
-
     Users *current = users;
 
     while (current != NULL)
     {
-        if (strcmp(current->username, name) == 0)
+        if (strcmp(current->username, username) == 0)
         {
             current->online = status;
             return;
@@ -180,11 +165,11 @@ void change_status(char username[], int status)
 
 int check_status(const char *msg)
 {
-    if (strstr(msg, "is connected") != NULL)
+    if (strstr(msg, "connected") != NULL)
     {
         return 1;
     }
-    else if (strstr(msg, "is disconnected") != NULL)
+    else if (strstr(msg, "disconnected") != NULL)
     {
         return 0;
     }
@@ -214,5 +199,6 @@ void list_users()
 
 void update_user_id(char id[])
 {
-    strcpy(user_id, id);
+    strncpy(user_id, id, sizeof(user_id) - 1);
+    user_id[sizeof(user_id) - 1] = '\0';
 }

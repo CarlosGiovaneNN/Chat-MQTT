@@ -8,16 +8,16 @@ MQTTAsync client;
 
 int connect_client()
 {
-    MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer5;
+    MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
     int rc;
 
     conn_opts.keepAliveInterval = 20;
-    conn_opts.cleanstart = 0;
-    conn_opts.onSuccess5 = on_connect;
-    conn_opts.onFailure5 = on_connect_failure;
-    conn_opts.context = client;
+    conn_opts.cleansession = 1;
     conn_opts.automaticReconnect = 1;
-    conn_opts.MQTTVersion = MQTTVERSION_5;
+    conn_opts.context = client;
+
+    conn_opts.onSuccess = on_connect;
+    conn_opts.onFailure = on_connect_failure;
 
     if ((rc = MQTTAsync_connect(client, &conn_opts)) != MQTTASYNC_SUCCESS)
     {
@@ -36,9 +36,7 @@ int init_client(char user_id[])
 
     update_user_id(user_id);
 
-    create_opts.MQTTVersion = MQTTVERSION_5;
-
-    if ((rc = MQTTAsync_createWithOptions(&client, ADDRESS, user_id, MQTTCLIENT_PERSISTENCE_NONE, NULL,
+    if ((rc = MQTTAsync_createWithOptions(&client, ADDRESS, user_id, MQTTCLIENT_PERSISTENCE_DEFAULT, NULL,
                                           &create_opts)) != MQTTASYNC_SUCCESS)
     {
         printf("Failed to create client, return code %d\n", rc);
@@ -81,31 +79,24 @@ void show_reconnect_options()
         return;
     }
 
-    // printf("%s", buffer);
-
     MQTTAsync_destroy(&client);
 }
 
-void on_disconnect_success(void *context, MQTTAsync_successData5 *response)
+void on_disconnect_success(void *context, MQTTAsync_successData *response)
 {
     printf("Desconectado do broker.\n");
-
-    // MQTTAsync client = (MQTTAsync)context;
-    // MQTTAsync_destroy(&client);
 }
 
 void close_client()
 {
-    char new_message[256];
-    sprintf(new_message, "%s is disconnected", user_id);
-    send_message(new_message, "USERS");
+    send_message("disconnected", "USERS");
 
     pthread_cancel(thread_status);
 
     usleep(100000);
 
-    MQTTAsync_disconnectOptions disc_opts = MQTTAsync_disconnectOptions_initializer5;
-    disc_opts.onSuccess5 = on_disconnect_success;
+    MQTTAsync_disconnectOptions disc_opts = MQTTAsync_disconnectOptions_initializer;
+    disc_opts.onSuccess = on_disconnect_success;
     disc_opts.context = client;
 
     int rc = MQTTAsync_disconnect(client, &disc_opts);
@@ -115,8 +106,8 @@ void close_client()
     }
     else
     {
-
-        usleep(100000);
+        while (is_connected())
+            ;
         show_reconnect_options();
     }
 }
