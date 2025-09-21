@@ -231,12 +231,17 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     {
         add_user(from);
 
+        //printf("%s\n", (char *)message->payload);
+        //printf("%d\n", check_status(msg));
+        //printf("%s\n", from);
+
         if (check_status(msg) == 1)
         {
             change_status(from, 1);
         }
         else if (check_status(msg) == 0)
         {
+            //printf("%s\n", from);
             change_status(from, 0);
         }
     }

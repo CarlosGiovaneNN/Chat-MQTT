@@ -163,15 +163,15 @@ void change_status(char username[], int status)
     }
 }
 
-int check_status(const char *msg)
+int check_status(char *msg)
 {
-    if (strstr(msg, "connected") != NULL)
-    {
-        return 1;
-    }
-    else if (strstr(msg, "disconnected") != NULL)
+    if (strstr(msg, "disconnected") != NULL)
     {
         return 0;
+    }
+    else if (strstr(msg, "connected") != NULL)
+    {
+        return 1;
     }
     return -1; // nenhum dos dois
 }
