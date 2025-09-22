@@ -10,6 +10,7 @@ void list_users();
 void update_user_id(char id[]);
 void load_users_from_file();
 Users *get_user_by_index(int index);
+int user_count();
 
 extern Users *users;
 

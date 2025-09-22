@@ -14,6 +14,11 @@
 #define ADDRESS "tcp://localhost:1883"
 #define QOS 1
 
+// Types of messages
+#define MESSAGE_NORMAL 0
+#define MESSAGE_GROUP_INVITATION 1
+#define MESSAGE_CHAT_INVITATION 2
+
 // Topic = ID_CONTROL
 #define IDCONTROL_GROUP_INVITATION 1 // de qual grupo
 #define IDCONTROL_CHAT_INVITATION 2
@@ -46,6 +51,7 @@ typedef struct Messages
     char from[256];
     char topic[256];
     char payload[256];
+    int type;
     struct Messages *next;
 } Messages;
 
@@ -61,6 +67,15 @@ typedef struct Users
     int online;
     struct Users *next;
 } Users;
+
+typedef struct Chat
+{
+    char topic[100];
+    int is_group;              // 0 = private, 1 = group
+    char to[100];              // private = username, group = group name
+    Participant *participants; // users in the group
+    struct Chat *next;
+} Chat;
 
 extern pthread_t thread_status, thread_shell;
 

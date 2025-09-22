@@ -202,3 +202,15 @@ void update_user_id(char id[])
     strncpy(user_id, id, sizeof(user_id) - 1);
     user_id[sizeof(user_id) - 1] = '\0';
 }
+
+int user_count()
+{
+    Users *current = users;
+    int count = 0;
+    while (current != NULL)
+    {
+        count++;
+        current = current->next;
+    }
+    return count;
+}

@@ -7,6 +7,6 @@
 int send_message(char msg[], char topic[]);
 void print_all_received_messages();
 void on_recv_message(MQTTAsync_message *message, char *topic);
-void list_control_msg();
+void control_msg();
 
 #endif

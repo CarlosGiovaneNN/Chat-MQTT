@@ -407,3 +407,4 @@ Group *get_group_by_name(char *group_name)
 
     return NULL;
 }
+

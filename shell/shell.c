@@ -2,6 +2,7 @@
 
 #include "../client/client.h"
 
+#include "../chat/chat.h"
 #include "../group/group.h"
 #include "../message/message.h"
 #include "../user/user.h"
@@ -10,16 +11,16 @@ void *run_shell(void *arg)
 {
     while (is_connected())
     {
-        printf("-------MENU-------\n");
-        printf("1 - Enviar mensagem\n");
+        printf("------------MENU------------\n");
+        printf("1 - Entrar no chat\n");
         printf("2 - Controle\n");
         printf("3 - Listar mensagens\n");
         printf("4 - Listar usuários\n");
         printf("5 - Listar grupos\n");
-        printf("6 - Listar mensagens de controle\n");
-        printf("7 - Criar grupo\n");
+        printf("6 - Criar grupo\n");
+        printf("7 - Pedir acesso ao grupo\n");
         printf("0 - Sair\n");
-        printf("------------------\n");
+        printf("-----------------------------\n");
 
         char buffer[256];
         fgets(buffer, sizeof(buffer), stdin);
@@ -28,11 +29,11 @@ void *run_shell(void *arg)
 
         if (strcmp(buffer, "1") == 0)
         {
-            // send_msg();
+            show_chat_menu();
         }
         else if (strcmp(buffer, "2") == 0)
         {
-            // control_msg();
+            control_msg();
         }
         else if (strcmp(buffer, "3") == 0)
         {
@@ -48,11 +49,11 @@ void *run_shell(void *arg)
         }
         else if (strcmp(buffer, "6") == 0)
         {
-            list_control_msg();
+            create_group_menu();
         }
         else if (strcmp(buffer, "7") == 0)
         {
-            create_group_menu();
+            // join_group_menu();
         }
         else if (strcmp(buffer, "0") == 0)
         {

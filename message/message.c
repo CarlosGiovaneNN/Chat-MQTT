@@ -1,5 +1,6 @@
 #include "../headers.h"
 
+#include "../chat/chat.h"
 #include "../client/client.h"
 #include "../group/group.h"
 #include "../user/user.h"
@@ -115,7 +116,7 @@ int send_message(char msg[], char topic[])
     return EXIT_SUCCESS;
 }
 
-void add_message(Messages **array, char payload[], char topic[], char from[])
+void add_message(Messages **array, char payload[], char topic[], char from[], int type)
 {
     Messages *new_message = malloc(sizeof(Messages));
     if (!new_message)
@@ -125,6 +126,7 @@ void add_message(Messages **array, char payload[], char topic[], char from[])
     strcpy(new_message->payload, payload);
     strcpy(new_message->from, from);
     new_message->next = NULL;
+    new_message->type = type;
 
     if (*array == NULL)
     {
@@ -143,18 +145,18 @@ void add_message(Messages **array, char payload[], char topic[], char from[])
 
 void add_all_received_message(char *payload, char topic[], char from[])
 {
-    add_message(&all_received_messages, payload, topic, from);
+    add_message(&all_received_messages, payload, topic, from, MESSAGE_NORMAL);
 }
 
 void add_unread_message(char *payload, char topic[], char from[])
 {
-    add_message(&unread_messages, payload, topic, from);
+    add_message(&unread_messages, payload, topic, from, MESSAGE_NORMAL);
     add_all_received_message(payload, topic, from);
 }
 
-void add_control_message(char topic[], char from[], char msg[])
+void add_control_message(char topic[], char from[], char msg[], int type)
 {
-    add_message(&control_messages, msg, topic, from);
+    add_message(&control_messages, msg, topic, from, type);
 }
 
 void clear_unread_messages()
@@ -217,15 +219,15 @@ Messages *get_control_message(int index)
     return NULL;
 }
 
-void list_control_msg()
+void control_msg()
 {
     int count = 1;
     printf("\n\n");
     for (Messages *message = control_messages; message != NULL; message = message->next)
     {
         printf("\n---------------------------\n");
-        printf("Realizada por: %s\n", message->from);
         printf("%d - %s\n", count, message->payload);
+        printf("Realizada por: %s\n", message->from);
         printf("---------------------------\n");
 
         count++;
@@ -253,33 +255,60 @@ void list_control_msg()
 
     printf("\nVoce deseja aceitar essa mensagem? (s/n):\n");
     fgets(buffer, sizeof(buffer), stdin);
+    char message[512];
+    char topic[512];
 
     char *group_name = strstr(msg->payload, "grupo: ");
 
     if (group_name)
     {
         group_name += strlen("grupo: ");
-        printf("Nome do grupo: %s\n", group_name);
     }
-
-    char message[100];
 
     if (buffer[0] == 's')
     {
-
-        sprintf(message, "%d;%s;", GROUP_INVITATION_ACCEPTED, group_name);
-        send_message(message, "GROUPS");
-        remove_control_message(index);
-
-        if (!toggle_participant_status_file(get_group_by_name(group_name), user_id))
+        printf("\n%d\n", msg->type);
+        if (msg->type == MESSAGE_GROUP_INVITATION)
         {
-            printf("Erro ao alterar status no arquivo de grupos\n");
+            sprintf(message, "%d;%s;", GROUP_INVITATION_ACCEPTED, group_name);
+
+            send_message(message, "GROUPS");
+
+            create_chat(group_name, 1);
+
+            remove_control_message(index);
+
+            if (!toggle_participant_status_file(get_group_by_name(group_name), user_id))
+            {
+                printf("Erro ao alterar status no arquivo de grupos\n");
+            }
+        }
+        else if (msg->type == MESSAGE_CHAT_INVITATION)
+        {
+            printf("entrou\n");
+            sprintf(message, "%d;", IDCONTROL_CHAT_INVITATION_ACCEPTED);
+            sprintf(topic, "%s_CONTROL", msg->from);
+
+            send_message(message, topic);
+
+            remove_control_message(index);
         }
     }
     else
     {
-        sprintf(message, "%d;%s;", GROUP_INVITATION_REJECTED, group_name);
-        send_message(message, "GROUPS");
+        if (msg->type == MESSAGE_GROUP_INVITATION)
+        {
+            sprintf(message, "%d;%s;", GROUP_INVITATION_REJECTED, group_name);
+
+            send_message(message, "GROUPS");
+        }
+        else if (msg->type == MESSAGE_CHAT_INVITATION)
+        {
+            sprintf(message, "%d;", IDCONTROL_CHAT_INVITATION_REJECTED);
+            sprintf(topic, "%s_CONTROL", msg->from);
+
+            send_message(message, topic);
+        }
         remove_control_message(index);
     }
 }
@@ -366,7 +395,8 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     else if (strcmp(topic, id_control) == 0)
     {
         int option;
-        char new_msg[128];
+        char new_msg[256];
+        // char topic[128];
 
         sscanf(msg, "%d;", &option);
 
@@ -377,19 +407,25 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
             sprintf(new_msg, "Convidou voce para o grupo: %s", group_name);
 
-            add_control_message(topic, from, new_msg);
+            add_control_message(topic, from, new_msg, MESSAGE_GROUP_INVITATION);
         }
         else if (option == IDCONTROL_CHAT_INVITATION)
         {
-            add_control_message(topic, from, "");
+            // sprintf(new_msg, "Pede para voce entrar no chat", from);
+            add_control_message(topic, from, "Pede para voce entrar no chat", MESSAGE_CHAT_INVITATION);
         }
         else if (option == IDCONTROL_CHAT_INVITATION_ACCEPTED)
         {
-            add_control_message(topic, from, "");
+            printf("aceitou\n");
+            sprintf(new_msg, "%s aceitou o convite para o chat", from);
+            add_unread_message(topic, from, new_msg);
+
+            create_chat(from, 0);
         }
         else if (option == IDCONTROL_CHAT_INVITATION_REJECTED)
         {
-            add_control_message(topic, from, "");
+            sprintf(new_msg, "%s recusou o convite para o chat", from);
+            add_unread_message(topic, from, new_msg);
         }
     }
     else
