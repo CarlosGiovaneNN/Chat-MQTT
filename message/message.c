@@ -141,15 +141,15 @@ void add_message(Messages **array, char payload[], char topic[], char from[])
     }
 }
 
-void add_all_received_message(MQTTAsync_message *message, char topic[], char from[])
+void add_all_received_message(char *payload, char topic[], char from[])
 {
-    add_message(&all_received_messages, message->payload, topic, from);
+    add_message(&all_received_messages, payload, topic, from);
 }
 
-void add_unread_message(MQTTAsync_message *message, char topic[], char from[])
+void add_unread_message(char *payload, char topic[], char from[])
 {
-    add_message(&unread_messages, message->payload, topic, from);
-    add_all_received_message(message, topic, from);
+    add_message(&unread_messages, payload, topic, from);
+    add_all_received_message(payload, topic, from);
 }
 
 void add_control_message(char topic[], char from[], char msg[])
@@ -179,6 +179,44 @@ void print_all_received_messages()
     print_messages(all_received_messages);
 }
 
+void remove_control_message(int index)
+{
+    int count = 1;
+
+    if (index > 0)
+    {
+        for (Messages *message = control_messages; message != NULL; message = message->next)
+        {
+            if (count == index)
+            {
+                Messages *aux = message->next;
+                message->next = message->next->next;
+                free(aux);
+                return;
+            }
+            count++;
+        }
+    }
+    else if (index == 0)
+    {
+        Messages *aux = control_messages;
+        control_messages = control_messages->next;
+        free(aux);
+    }
+}
+
+Messages *get_control_message(int index)
+{
+    int count = 0;
+    for (Messages *message = control_messages; message != NULL; message = message->next)
+    {
+        if (count == index)
+            return message;
+        count++;
+    }
+    return NULL;
+}
+
 void list_control_msg()
 {
     int count = 1;
@@ -186,29 +224,65 @@ void list_control_msg()
     for (Messages *message = control_messages; message != NULL; message = message->next)
     {
         printf("\n---------------------------\n");
-        printf("%d - Mensagem de controle\n", count);
-        printf("Realizada por: %s\n\n", message->from);
-
-        printf("%s\n", message->payload);
+        printf("Realizada por: %s\n", message->from);
+        printf("%d - %s\n", count, message->payload);
         printf("---------------------------\n");
 
         count++;
     }
 
+    printf("0 - Voltar\n");
+    printf("---------------------------\n");
     printf("\nSelecione o número da mensagem que deseja responder:\n");
+
+    char buffer[256];
+    fgets(buffer, sizeof(buffer), stdin);
+
+    if (buffer[0] == '0')
+        return;
+
+    int index = atoi(buffer) - 1;
+
+    Messages *msg = get_control_message(index);
+
+    if (msg == NULL)
+    {
+        printf("Mensagem não encontrada\n");
+        return;
+    }
+
+    printf("\nVoce deseja aceitar essa mensagem? (s/n):\n");
+    fgets(buffer, sizeof(buffer), stdin);
+
+    char *group_name = strstr(msg->payload, "grupo: ");
+
+    if (group_name)
+    {
+        group_name += strlen("grupo: ");
+        printf("Nome do grupo: %s\n", group_name);
+    }
+
+    char message[100];
+
+    if (buffer[0] == 's')
+    {
+
+        sprintf(message, "%d;%s;", GROUP_INVITATION_ACCEPTED, group_name);
+        send_message(message, "GROUPS");
+        remove_control_message(index);
+
+        if (!toggle_participant_status_file(get_group_by_name(group_name), user_id))
+        {
+            printf("Erro ao alterar status no arquivo de grupos\n");
+        }
+    }
+    else
+    {
+        sprintf(message, "%d;%s;", GROUP_INVITATION_REJECTED, group_name);
+        send_message(message, "GROUPS");
+        remove_control_message(index);
+    }
 }
-
-// int check_id_control(char msg[])
-// {
-//     int input;
-
-//     sscanf(msg, "%d;", input);
-
-//     if (input > 0)
-//         return input;
-
-//     return 0;
-// }
 
 void on_recv_message(MQTTAsync_message *message, char *topic)
 {
@@ -231,9 +305,9 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     {
         add_user(from);
 
-        //printf("%s\n", (char *)message->payload);
-        //printf("%d\n", check_status(msg));
-        //printf("%s\n", from);
+        // printf("%s\n", (char *)message->payload);
+        // printf("%d\n", check_status(msg));
+        // printf("%s\n", from);
 
         if (check_status(msg) == 1)
         {
@@ -241,17 +315,56 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
         }
         else if (check_status(msg) == 0)
         {
-            //printf("%s\n", from);
+            // printf("%s\n", from);
             change_status(from, 0);
         }
     }
     else if (strcmp(topic, "GROUPS") == 0)
     {
-        add_group_by_message(msg);
+
+        if (strcmp(user_id, from) == 0)
+            return;
+        printf("ENTROU NO GROUPS\n");
+        if (strncmp(msg, "Group:", 6) == 0)
+        {
+            printf("ENTROU NO GROUP CREATE\n");
+            add_group_by_message(msg);
+        }
+        else
+        {
+            int option;
+            char new_msg[256];
+            char group_name[128];
+
+            sscanf(msg, "%d;", &option);
+
+            printf("%s\n", (char *)message->payload);
+
+            if (option == GROUP_INVITATION_ACCEPTED)
+            {
+                sscanf(msg, "%d;%[^;];", &option, group_name);
+                sprintf(new_msg, "Aceitou o convite para o grupo: %s", group_name);
+
+                add_unread_message(new_msg, topic, from);
+
+                Group *group = get_group_by_name(group_name);
+
+                change_participant_status(group, from, 0);
+            }
+            else if (option == GROUP_INVITATION_REJECTED)
+            {
+                sscanf(msg, "%d;%[^;];", &option, group_name);
+                sprintf(new_msg, "Recusou o convite para o grupo: %s", group_name);
+                add_unread_message(topic, from, new_msg);
+
+                // Group *group = get_group_by_name(group_name);
+
+                // change_participant_status(group, from, -1);
+            }
+        }
     }
     else if (strcmp(topic, id_control) == 0)
     {
-        printf("%s\n", (char *)message->payload);
         int option;
         char new_msg[128];
 
@@ -260,7 +373,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
         if (option == IDCONTROL_GROUP_INVITATION)
         {
             char group_name[100];
-            sscanf(msg, "%d;%s;", &option, group_name);
+            sscanf(msg, "%d;%[^;];", &option, group_name);
 
             sprintf(new_msg, "Convidou voce para o grupo: %s", group_name);
 
@@ -281,6 +394,11 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     }
     else
     {
-        add_unread_message(message, topic, from);
+        if (strcmp(user_id, from) == 0)
+        {
+            return;
+        }
+
+        add_unread_message(msg, topic, from);
     }
 }

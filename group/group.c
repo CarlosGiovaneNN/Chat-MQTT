@@ -64,7 +64,7 @@ void save_group(Group *g)
     fclose(f);
 }
 
-int toggle_participant_status(Group *group, char *username)
+int toggle_participant_status_file(Group *group, char *username)
 {
     if (!group)
         return 0;
@@ -75,14 +75,65 @@ int toggle_participant_status(Group *group, char *username)
         if (strcmp(p->username, username) == 0)
         {
             p->pending = !p->pending;
-            // printf("User %s is now %s\n", p->username,
-            //        p->pending ? "pending" : "active");
+
+            FILE *in = fopen("group.txt", "r");
+            if (!in)
+                return 0;
+
+            FILE *out = fopen("tmp.txt", "w");
+            if (!out)
+            {
+                fclose(in);
+                return 0;
+            }
+
+            char line[256];
+
+            while (fgets(line, sizeof(line), in))
+            {
+                // remove \n ou \r\n do final
+                line[strcspn(line, "\r\n")] = 0;
+
+                if (strstr(line, username) && strstr(line, "(pending)"))
+                {
+                    fprintf(out, "- %s (active)\n", username);
+                }
+                else if (strstr(line, username) && strstr(line, "(active)"))
+                {
+                    fprintf(out, "- %s (pending)\n", username);
+                }
+                else
+                {
+                    fprintf(out, "%s\n", line);
+                }
+            }
+
+            fclose(in);
+            fclose(out);
+
+            remove("group.txt");
+            rename("tmp.txt", "group.txt");
+
             return 1;
         }
         p = p->next;
     }
 
     return 0;
+}
+
+void change_participant_status(Group *group, char *username, int pending)
+{
+    Participant *p = group->participants;
+    while (p)
+    {
+        if (strcmp(p->username, username) == 0)
+        {
+            p->pending = pending;
+            return;
+        }
+        p = p->next;
+    }
 }
 
 void add_group_by_message(char *message)
@@ -342,4 +393,17 @@ void list_groups()
 
         printf("\n");
     }
+}
+
+Group *get_group_by_name(char *group_name)
+{
+    for (Group *g = groups; g != NULL; g = g->next)
+    {
+        if (strcmp(g->name, group_name) == 0)
+        {
+            return g;
+        }
+    }
+
+    return NULL;
 }
