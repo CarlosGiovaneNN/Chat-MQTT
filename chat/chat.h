@@ -2,6 +2,7 @@
 #define CHAT_H
 
 void show_chat_menu();
-void create_chat(char *name, int is_group);
+char *create_chat(char *name, int is_group);
+void load_chats_from_file();
 
 #endif

@@ -167,12 +167,25 @@ void clear_unread_messages()
 
 void print_messages(Messages *messages)
 {
+    int count = 1;
+
     for (Messages *message = messages; message != NULL; message = message->next)
     {
-        printf("From: %s\n", message->from);
-        printf("Topic: %s\n", message->topic);
-
+        printf("====================================\n");
+        printf("Mensagem %d\n", count);
+        printf("------------------------------------\n");
+        printf("De:    %s\n", message->from);
+        printf("Tópico: %s\n", message->topic);
+        printf("------------------------------------\n");
         printf("%s\n", message->payload);
+        printf("====================================\n\n");
+
+        count++;
+    }
+
+    if (count == 1)
+    {
+        printf("Nenhuma mensagem para exibir.\n");
     }
 }
 
@@ -222,20 +235,22 @@ Messages *get_control_message(int index)
 void control_msg()
 {
     int count = 1;
-    printf("\n\n");
+    printf("\n");
+
     for (Messages *message = control_messages; message != NULL; message = message->next)
     {
-        printf("\n---------------------------\n");
-        printf("%d - %s\n", count, message->payload);
-        printf("Realizada por: %s\n", message->from);
-        printf("---------------------------\n");
+        printf("============================================\n");
+        printf("Mensagem %d:\n", count);
+        printf("%s\n", message->payload);
+        printf("Enviada por: %s\n", message->from);
+        printf("============================================\n\n");
 
         count++;
     }
 
     printf("0 - Voltar\n");
-    printf("---------------------------\n");
-    printf("\nSelecione o número da mensagem que deseja responder:\n");
+    printf("=======================================\n");
+    printf("Selecione o número da mensagem que deseja responder:\n");
 
     char buffer[256];
     fgets(buffer, sizeof(buffer), stdin);
@@ -396,7 +411,6 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     {
         int option;
         char new_msg[256];
-        // char topic[128];
 
         sscanf(msg, "%d;", &option);
 
@@ -420,12 +434,26 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
             sprintf(new_msg, "%s aceitou o convite para o chat", from);
             add_unread_message(topic, from, new_msg);
 
-            create_chat(from, 0);
+            char topic[128];
+            char new_chat[100];
+
+            strcpy(new_chat, create_chat(from, 0));
+
+            sprintf(topic, "%s_CONTROL", from);
+
+            send_message(new_chat, topic);
         }
         else if (option == IDCONTROL_CHAT_INVITATION_REJECTED)
         {
             sprintf(new_msg, "%s recusou o convite para o chat", from);
             add_unread_message(topic, from, new_msg);
+        } else {
+            if (strcmp(user_id, from) == 0)
+            {
+                return;
+            }
+            
+            add_chat_by_message(msg, from);
         }
     }
     else

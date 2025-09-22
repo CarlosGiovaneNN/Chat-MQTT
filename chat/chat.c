@@ -6,7 +6,7 @@
 
 Chat *chats = NULL;
 
-void create_chat(char *name, int is_group)
+char *create_chat(char *name, int is_group)
 {
     if (!name || strlen(name) == 0)
         return;
@@ -33,12 +33,14 @@ void create_chat(char *name, int is_group)
         {
             chat->participants = NULL;
         }
+
+        strcpy(chat->topic, name);
     }
     else
     {
         chat->participants = NULL;
 
-        FILE *file = fopen("chat.txt", "a");
+        FILE *file = fopen("chat/chat.txt", "a");
         if (!file)
             return;
 
@@ -50,7 +52,59 @@ void create_chat(char *name, int is_group)
         fprintf(file, "%s_%s_%s\n", user_id, name, timestamp);
 
         fclose(file);
+
+        sprintf(chat->topic, "%s_%s_%s", user_id, name, timestamp);
     }
+
+    return chat->topic;
+}
+
+void add_chat_by_message(char *message, char *from)
+{
+    Chat *chat = malloc(sizeof(Chat));
+    if (!chat)
+        return;
+
+    strncpy(chat->topic, message, sizeof(chat->topic) - 1);
+    chat->topic[sizeof(chat->topic) - 1] = '\0';
+
+    chat->is_group = 0;
+    chat->participants = NULL;
+    chat->next = chats;
+    chats = chat;
+}
+
+void load_chats_from_file()
+{
+    FILE *file = fopen("chat/chat.txt", "r");
+    if (!file)
+    {
+        perror("Erro ao abrir chat.txt");
+        return;
+    }
+
+    char line[256];
+    while (fgets(line, sizeof(line), file))
+    {
+        line[strcspn(line, "\r\n")] = 0;
+
+        if (strstr(line, user_id) != NULL)
+        {
+            Chat *chat = malloc(sizeof(Chat));
+            if (!chat)
+                continue;
+
+            strncpy(chat->topic, line, sizeof(chat->topic) - 1);
+            chat->topic[sizeof(chat->topic) - 1] = '\0';
+
+            chat->is_group = 0;
+            chat->participants = NULL;
+            chat->next = chats;
+            chats = chat;
+        }
+    }
+
+    fclose(file);
 }
 
 Chat *find_chat(char *name, int is_group)
