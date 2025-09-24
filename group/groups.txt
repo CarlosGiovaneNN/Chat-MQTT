@@ -1,0 +1,11 @@
+Group: teste
+Leader: user1
+Participants:
+- user2 (pending)
+- user (pending)
+
+Group: teafasa
+Leader: user1
+Participants:
+- user2 (pending)
+

@@ -9,11 +9,11 @@ Chat *chats = NULL;
 char *create_chat(char *name, int is_group)
 {
     if (!name || strlen(name) == 0)
-        return;
+        return NULL;
 
     Chat *chat = malloc(sizeof(Chat));
     if (!chat)
-        return;
+        return NULL;
 
     strncpy(chat->to, name, sizeof(chat->to) - 1);
     chat->to[sizeof(chat->to) - 1] = '\0';
@@ -42,7 +42,7 @@ char *create_chat(char *name, int is_group)
 
         FILE *file = fopen("chat/chat.txt", "a");
         if (!file)
-            return;
+            return NULL;
 
         time_t now = time(NULL);
         struct tm *t = localtime(&now);
@@ -74,37 +74,114 @@ void add_chat_by_message(char *message, char *from)
     chats = chat;
 }
 
-void load_chats_from_file()
+void load_chats_by_groups()
+{
+    Group *group = groups;
+    while (group != NULL)
+    {
+        Chat *existing = chats;
+        int found = 0;
+        while (existing)
+        {
+            if (existing->is_group == 1 && strcmp(existing->to, group->name) == 0)
+            {
+                found = 1;
+                break;
+            }
+            existing = existing->next;
+        }
+
+        if (!found)
+        {
+            Chat *chat = malloc(sizeof(Chat));
+            if (!chat)
+            {
+                group = group->next;
+                continue;
+            }
+
+            strncpy(chat->topic, group->name, sizeof(chat->topic) - 1);
+            chat->topic[sizeof(chat->topic) - 1] = '\0';
+
+            strncpy(chat->to, group->name, sizeof(chat->to) - 1);
+            chat->to[sizeof(chat->to) - 1] = '\0';
+
+            chat->is_group = 1;
+            chat->participants = group->participants;
+
+            chat->next = chats;
+            chats = chat;
+        }
+
+        group = group->next;
+    }
+}
+
+Chat *find_chat_by_to_and_type(const char *to, int is_group)
+{
+    Chat *c = chats;
+    while (c)
+    {
+        if (c->is_group == is_group && strcmp(c->to, to) == 0)
+            return c;
+        c = c->next;
+    }
+    return NULL;
+}
+
+void load_chats_from_file(void)
 {
     FILE *file = fopen("chat/chat.txt", "r");
     if (!file)
     {
-        perror("Erro ao abrir chat.txt");
+        perror("Erro ao abrir chat/chat.txt");
         return;
     }
 
-    char line[256];
+    char line[512];
     while (fgets(line, sizeof(line), file))
     {
         line[strcspn(line, "\r\n")] = 0;
 
-        if (strstr(line, user_id) != NULL)
-        {
-            Chat *chat = malloc(sizeof(Chat));
-            if (!chat)
-                continue;
+        if (strstr(line, user_id) == NULL)
+            continue;
 
-            strncpy(chat->topic, line, sizeof(chat->topic) - 1);
-            chat->topic[sizeof(chat->topic) - 1] = '\0';
+        char user1[128] = {0}, user2[128] = {0}, timestamp[128] = {0};
+        int parts = sscanf(line, "%127[^_]_%127[^_]_%127s", user1, user2, timestamp);
 
-            chat->is_group = 0;
-            chat->participants = NULL;
-            chat->next = chats;
-            chats = chat;
-        }
+        if (parts != 3)
+            continue;
+
+        char *other = NULL;
+        if (strcmp(user_id, user1) == 0)
+            other = user2;
+        else if (strcmp(user_id, user2) == 0)
+            other = user1;
+        else
+            continue;
+
+        if (find_chat_by_to_and_type(other, 0) != NULL)
+            continue;
+
+        Chat *chat = malloc(sizeof(Chat));
+        if (!chat)
+            continue;
+
+        strncpy(chat->topic, line, sizeof(chat->topic) - 1);
+        chat->topic[sizeof(chat->topic) - 1] = '\0';
+
+        strncpy(chat->to, other, sizeof(chat->to) - 1);
+        chat->to[sizeof(chat->to) - 1] = '\0';
+
+        chat->is_group = 0;
+        chat->participants = NULL;
+        chat->next = chats;
+        chats = chat;
     }
 
     fclose(file);
+
+    load_chats_by_groups();
 }
 
 Chat *find_chat(char *name, int is_group)
@@ -141,12 +218,14 @@ void show_chat_menu()
     {
         if (find_chat(current_group->name, 1))
         {
-            printf(" %d - %s\n", count, current_group->name);
+            printf(" %d - %s (Grupo)\n", count, current_group->name);
             count++;
         }
+
+        current_group = current_group->next;
     }
 
-    printf("0 - Voltar\n");
+    printf("\n0 - Voltar\n");
     printf("---------------------------\n");
     printf("\nSelecione o número da conversa que deseja entrar:\n");
 

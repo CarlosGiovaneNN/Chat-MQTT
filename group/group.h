@@ -13,6 +13,7 @@ void add_group_by_message(char *message);
 void load_groups_from_file();
 Group *get_group_by_name(char *group_name);
 void change_participant_status(Group *group, char *username, int pending);
+void join_group_menu();
 
 extern Group *groups;
 

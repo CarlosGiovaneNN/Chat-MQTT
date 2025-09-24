@@ -29,12 +29,10 @@ int connect_client()
     return EXIT_SUCCESS;
 }
 
-int init_client(char user_id[])
+int init_client()
 {
     MQTTAsync_createOptions create_opts = MQTTAsync_createOptions_initializer;
     int rc;
-
-    update_user_id(user_id);
 
     if ((rc = MQTTAsync_createWithOptions(&client, ADDRESS, user_id, MQTTCLIENT_PERSISTENCE_DEFAULT, NULL,
                                           &create_opts)) != MQTTASYNC_SUCCESS)

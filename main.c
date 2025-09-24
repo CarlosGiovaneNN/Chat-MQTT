@@ -1,7 +1,9 @@
-#include "client/client.h"
-#include "group/group.h"
 #include "headers.h"
 #include "threads/threads.h"
+
+#include "chat/chat.h"
+#include "client/client.h"
+#include "group/group.h"
 #include "user/user.h"
 
 int main(int argc, char *argv[])
@@ -12,9 +14,13 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    init_client(argv[1]);
+    update_user_id(argv[1]);
+
     load_users_from_file();
     load_groups_from_file();
+    load_chats_from_file();
+
+    init_client();
 
     if (create_threads())
     {

@@ -349,8 +349,8 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     {
         add_user(from);
 
-        // printf("%s\n", (char *)message->payload);
-        // printf("%d\n", check_status(msg));
+        printf("%s\n", (char *)message->payload);
+        printf("%s\n", from);
         // printf("%s\n", from);
 
         if (check_status(msg) == 1)
@@ -447,13 +447,23 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
         {
             sprintf(new_msg, "%s recusou o convite para o chat", from);
             add_unread_message(topic, from, new_msg);
-        } else {
+        }
+        else if (option == IDCONTROL_GROUP_ASK_TO_JOIN)
+        {
+            printf("ENTROU NO IDCONTROL_GROUP_ASK_TO_JOIN\n");
+
+            printf("%s\n", (char *)message->payload);
+
+            add_control_message(topic, from, "Pede permissao para entrar no grupo", MESSAGE_GROUP_ASK_TO_JOIN);
+        }
+        else
+        {
             if (strcmp(user_id, from) == 0)
             {
                 return;
             }
-            
-            add_chat_by_message(msg, from);
+
+            printf("%s", (char *)message->payload);
         }
     }
     else

@@ -408,3 +408,74 @@ Group *get_group_by_name(char *group_name)
     return NULL;
 }
 
+void aks_to_join_group(Group *group)
+{
+    char message[256];
+    char topic[256];
+    snprintf(message, sizeof(message), "%d;%s;", IDCONTROL_GROUP_ASK_TO_JOIN, group->name);
+    snprintf(topic, sizeof(topic), "%s_CONTROL", group->leader);
+
+    send_message(message, topic);
+}
+
+void join_group_menu()
+{
+    printf("\nGrupos disponíveis para entrar:\n");
+    printf("-------------------------------\n");
+
+    int count = 1;
+    Group *current_group = groups;
+
+    while (current_group != NULL)
+    {
+        int is_member = 0;
+
+        if (strcmp(current_group->leader, user_id) == 0)
+        {
+            is_member = 1;
+        }
+
+        Participant *p = current_group->participants;
+        while (p != NULL)
+        {
+            if (strcmp(p->username, user_id) == 0)
+            {
+                is_member = 1;
+                break;
+            }
+            p = p->next;
+        }
+
+        if (!is_member)
+        {
+            printf(" %d - %s\n", count, current_group->name);
+            count++;
+        }
+
+        current_group = current_group->next;
+    }
+
+    if (count == 1)
+    {
+        printf("Nenhum grupo disponível.\n");
+    }
+
+    printf("0 - Voltar\n");
+    printf("-------------------------------\n");
+    printf("\nSelecione o número do grupo que deseja entrar:\n");
+
+    char buffer[256];
+    fgets(buffer, sizeof(buffer), stdin);
+
+    if (buffer[0] == '0')
+        return;
+
+    int index = atoi(buffer) - 1;
+
+    Group *group = get_group_by_index(index);
+
+    if (group != NULL)
+    {
+        aks_to_join_group(group);
+    }
+}

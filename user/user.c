@@ -126,6 +126,7 @@ void save_user_to_file(char *username)
     fclose(f);
 }
 
+
 void add_user(char username[])
 {
     int status = 0;

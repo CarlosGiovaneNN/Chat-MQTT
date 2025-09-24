@@ -53,7 +53,7 @@ void *run_shell(void *arg)
         }
         else if (strcmp(buffer, "7") == 0)
         {
-            // join_group_menu();
+            join_group_menu();
         }
         else if (strcmp(buffer, "0") == 0)
         {

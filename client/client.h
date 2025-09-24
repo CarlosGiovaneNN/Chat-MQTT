@@ -3,7 +3,7 @@
 
 #include "MQTTAsync.h"
 
-int init_client(char user_id[]);
+int init_client();
 
 int is_connected();
 
