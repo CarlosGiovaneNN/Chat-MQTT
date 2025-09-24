@@ -1,8 +1,8 @@
-## Aplicação de Bate-Papo com Protocolo MQTT
+# Aplicação de Bate-Papo com Protocolo MQTT
 
 ---
 
-# Sumário
+## Sumário
 1. Introdução  
 2. Objetivos  
 3. Requisitos de Desenvolvimento  
@@ -52,7 +52,7 @@ O projeto visa implementar uma solução de comunicação baseada em MQTT, atend
 ## 4.2 Conversas One-to-One
 - Sessões são criadas com tópicos exclusivos no formato:  
 
-**usuario1\_usuario2\_timestamp**
+   `usuario1\_usuario2\_timestamp`
 
 - O identificador da sessão é comunicado ao solicitante via publicação no tópico de controle.  
 
