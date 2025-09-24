@@ -1,7 +1,5 @@
 # Aplicação de Bate-Papo com Protocolo MQTT
 
----
-
 ## Sumário
 1. Introdução  
 2. Objetivos  
@@ -18,13 +16,11 @@
 8. Execução  
 9. Considerações Finais  
 
----
 
 # 1. Introdução
 O presente trabalho tem como objetivo o desenvolvimento de uma aplicação de **bate-papo (chat)** utilizando exclusivamente o protocolo **MQTT**.  
 A aplicação deverá oferecer comunicação **um-a-um (one-to-one)** e **em grupo (group chat)**, garantindo persistência de dados para usuários offline.  
 
----
 
 # 2. Objetivos
 O projeto visa implementar uma solução de comunicação baseada em MQTT, atendendo aos seguintes objetivos:  
@@ -33,7 +29,6 @@ O projeto visa implementar uma solução de comunicação baseada em MQTT, atend
 - Fornecer um mecanismo de persistência para usuários offline.  
 - Implementar uma interface em modo texto para interação do usuário.  
 
----
 
 # 3. Requisitos de Desenvolvimento
 - **Sistema Operacional**: Linux  
@@ -41,7 +36,6 @@ O projeto visa implementar uma solução de comunicação baseada em MQTT, atend
 - **Linguagem de Programação**: C  
 - **Protocolo**: MQTT  
 
----
 
 # 4. Estrutura de Controle por Tópicos
 
@@ -61,7 +55,6 @@ O projeto visa implementar uma solução de comunicação baseada em MQTT, atend
 - Cada grupo possui um líder responsável pela aceitação de novos membros.  
 - A atualização da lista de membros é publicada no tópico `GROUPS`.  
 
----
 
 # 5. Funcionalidades
 A aplicação contempla:  
@@ -72,7 +65,6 @@ A aplicação contempla:
 5. Gerenciamento de grupos, com inclusão de novos membros.  
 6. Persistência de mensagens para usuários offline.  
 
----
 
 # 6. Etapas do Projeto
 
@@ -85,7 +77,6 @@ A aplicação contempla:
 - Implementação da comunicação efetiva.  
 - Elaboração do relatório descritivo.  
 
----
 
 # 7. Arquitetura do Sistema
 A arquitetura é composta por:  
