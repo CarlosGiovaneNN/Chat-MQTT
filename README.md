@@ -85,4 +85,3 @@ A arquitetura é composta por:
 - **Camada de Persistência**: armazena dados de sessões e mensagens.  
 - **Interface de Usuário**: menus interativos em modo texto.  
 
----
