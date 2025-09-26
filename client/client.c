@@ -34,8 +34,8 @@ int init_client()
     MQTTAsync_createOptions create_opts = MQTTAsync_createOptions_initializer;
     int rc;
 
-    if ((rc = MQTTAsync_createWithOptions(&client, ADDRESS, user_id, MQTTCLIENT_PERSISTENCE_DEFAULT, NULL,
-                                          &create_opts)) != MQTTASYNC_SUCCESS)
+    if ((rc = MQTTAsync_createWithOptions(&client, ADDRESS, user_id, MQTTCLIENT_PERSISTENCE_DEFAULT,
+                                          "/tmp/mqtt_persist", &create_opts)) != MQTTASYNC_SUCCESS)
     {
         printf("Failed to create client, return code %d\n", rc);
         return EXIT_FAILURE;
