@@ -21,7 +21,7 @@
 #define MESSAGE_GROUP_ASK_TO_JOIN 3
 
 // Topic = ID_CONTROL
-#define IDCONTROL_GROUP_INVITATION 1 // de qual grupo
+#define IDCONTROL_GROUP_INVITATION 1
 #define IDCONTROL_CHAT_INVITATION 2
 #define IDCONTROL_CHAT_INVITATION_ACCEPTED 3
 #define IDCONTROL_CHAT_INVITATION_REJECTED 4
@@ -30,8 +30,6 @@
 // Topic = GROUPS
 #define GROUP_INVITATION_ACCEPTED 1
 #define GROUP_INVITATION_REJECTED 2
-
-// user-time:<int>;<nome do grupo>;
 
 typedef struct Participant
 {

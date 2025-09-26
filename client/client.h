@@ -3,9 +3,9 @@
 
 #include "MQTTAsync.h"
 
-int init_client();
-
 int is_connected();
+
+int init_client();
 
 void close_client();
 
