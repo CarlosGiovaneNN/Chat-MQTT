@@ -79,6 +79,18 @@ typedef struct Chat
     struct Chat *next;
 } Chat;
 
+typedef enum
+{
+    ITEM_USER,
+    ITEM_GROUP
+} ItemType;
+
+typedef struct MenuItem
+{
+    ItemType type;
+    void *ptr;
+} MenuItem;
+
 extern pthread_t thread_status, thread_shell;
 
 #endif

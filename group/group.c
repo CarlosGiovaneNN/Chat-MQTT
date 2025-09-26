@@ -1,5 +1,6 @@
 #include "../headers.h"
 
+#include "../chat/chat.h"
 #include "../message/message.h"
 #include "../user/user.h"
 
@@ -31,19 +32,101 @@ void create_group(char *group_name, char *leader)
     new_group->participants = NULL;
     new_group->next = groups;
     groups = new_group;
+
+    create_chat(group_name, 1);
 }
 
 void add_participant(Group *group, char *username, int pending)
 {
     Participant *p = malloc(sizeof(Participant));
-
     if (!p)
         return;
 
     strcpy(p->username, username);
     p->pending = pending;
-    p->next = group->participants;
-    group->participants = p;
+    p->next = NULL;
+
+    if (!group->participants)
+    {
+        group->participants = p;
+    }
+    else
+    {
+        Participant *current = group->participants;
+        while (current->next)
+        {
+            current = current->next;
+        }
+        current->next = p;
+    }
+}
+
+int add_participant_to_group_file(char *group_name, char *username, Group *group, int pending)
+{
+    FILE *in = fopen(file_groups, "r");
+    if (!in)
+    {
+        perror("Erro ao abrir group.txt");
+        return 0;
+    }
+
+    FILE *out = fopen("tmp.txt", "w");
+    if (!out)
+    {
+        perror("Erro ao criar tmp.txt");
+        fclose(in);
+        return 0;
+    }
+
+    char line[256];
+    int inside_group = 0;
+    int group_found = 0;
+
+    while (fgets(line, sizeof(line), in))
+    {
+        fputs(line, out);
+
+        if (strncmp(line, "Group: ", 7) == 0)
+        {
+            char current_group[100];
+            sscanf(line + 7, "%[^\n]", current_group);
+
+            if (strcmp(current_group, group_name) == 0)
+            {
+                inside_group = 1;
+                group_found = 1;
+            }
+            else
+            {
+                inside_group = 0;
+            }
+        }
+
+        if (inside_group && strncmp(line, "Participants:", 12) == 0)
+        {
+            // DO NOTHING
+        }
+        else if (inside_group && strncmp(line, "Group: ", 7) == 0)
+        {
+            fprintf(out, "- %s (%s)\n", username, pending ? "pending" : "active");
+            inside_group = 0;
+        }
+    }
+
+    if (inside_group)
+    {
+        fprintf(out, "- %s (%s)\n", username, pending ? "pending" : "active");
+    }
+
+    fclose(in);
+    fclose(out);
+
+    add_participant(group, username, pending);
+
+    remove(file_groups);
+    rename("tmp.txt", file_groups);
+
+    return group_found;
 }
 
 void save_group(Group *g)
@@ -76,7 +159,7 @@ int toggle_participant_status_file(Group *group, char *username)
         {
             p->pending = !p->pending;
 
-            FILE *in = fopen("group.txt", "r");
+            FILE *in = fopen(file_groups, "r");
             if (!in)
                 return 0;
 
@@ -111,8 +194,8 @@ int toggle_participant_status_file(Group *group, char *username)
             fclose(in);
             fclose(out);
 
-            remove("group.txt");
-            rename("tmp.txt", "group.txt");
+            remove(file_groups);
+            rename("tmp.txt", file_groups);
 
             return 1;
         }
@@ -478,4 +561,18 @@ void join_group_menu()
     {
         aks_to_join_group(group);
     }
+}
+
+Participant *get_participant_by_username(Group *group, char *username)
+{
+    Participant *p = group->participants;
+    while (p != NULL)
+    {
+        if (strcmp(p->username, username) == 0)
+        {
+            return p;
+        }
+        p = p->next;
+    }
+    return NULL;
 }

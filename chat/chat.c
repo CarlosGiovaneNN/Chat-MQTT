@@ -6,6 +6,8 @@
 
 Chat *chats = NULL;
 
+char file_chats[] = "chat/chat.txt";
+
 char *create_chat(char *name, int is_group)
 {
     if (!name || strlen(name) == 0)
@@ -40,7 +42,7 @@ char *create_chat(char *name, int is_group)
     {
         chat->participants = NULL;
 
-        FILE *file = fopen("chat/chat.txt", "a");
+        FILE *file = fopen(file_chats, "a");
         if (!file)
             return NULL;
 
@@ -79,38 +81,61 @@ void load_chats_by_groups()
     Group *group = groups;
     while (group != NULL)
     {
-        Chat *existing = chats;
-        int found = 0;
-        while (existing)
+        int is_member = 0;
+
+        if (strcmp(group->leader, user_id) == 0)
         {
-            if (existing->is_group == 1 && strcmp(existing->to, group->name) == 0)
+            is_member = 1;
+        }
+        else
+        {
+            Participant *p = group->participants;
+            while (p != NULL)
             {
-                found = 1;
-                break;
+                if (strcmp(p->username, user_id) == 0 && p->pending == 0)
+                {
+                    is_member = 1;
+                    break;
+                }
+                p = p->next;
             }
-            existing = existing->next;
         }
 
-        if (!found)
+        if (is_member)
         {
-            Chat *chat = malloc(sizeof(Chat));
-            if (!chat)
+            Chat *existing = chats;
+            int found = 0;
+            while (existing)
             {
-                group = group->next;
-                continue;
+                if (existing->is_group == 1 && strcmp(existing->to, group->name) == 0)
+                {
+                    found = 1;
+                    break;
+                }
+                existing = existing->next;
             }
 
-            strncpy(chat->topic, group->name, sizeof(chat->topic) - 1);
-            chat->topic[sizeof(chat->topic) - 1] = '\0';
+            if (!found)
+            {
+                Chat *chat = malloc(sizeof(Chat));
+                if (!chat)
+                {
+                    group = group->next;
+                    continue;
+                }
 
-            strncpy(chat->to, group->name, sizeof(chat->to) - 1);
-            chat->to[sizeof(chat->to) - 1] = '\0';
+                strncpy(chat->topic, group->name, sizeof(chat->topic) - 1);
+                chat->topic[sizeof(chat->topic) - 1] = '\0';
 
-            chat->is_group = 1;
-            chat->participants = group->participants;
+                strncpy(chat->to, group->name, sizeof(chat->to) - 1);
+                chat->to[sizeof(chat->to) - 1] = '\0';
 
-            chat->next = chats;
-            chats = chat;
+                chat->is_group = 1;
+                chat->participants = group->participants;
+
+                chat->next = chats;
+                chats = chat;
+            }
         }
 
         group = group->next;
@@ -131,7 +156,7 @@ Chat *find_chat_by_to_and_type(const char *to, int is_group)
 
 void load_chats_from_file(void)
 {
-    FILE *file = fopen("chat/chat.txt", "r");
+    FILE *file = fopen(file_chats, "r");
     if (!file)
     {
         perror("Erro ao abrir chat/chat.txt");
@@ -198,36 +223,56 @@ Chat *find_chat(char *name, int is_group)
 
 void show_chat_menu()
 {
-    printf("\nConversas disponiveis:\n");
-
+    MenuItem items[256];
     int count = 1;
 
-    Users *current_user = users;
+    printf("\n================ Conversas Disponíveis ================\n\n");
 
+    printf("[Conversas ativas]\n");
+    Users *current_user = users;
     while (current_user != NULL)
     {
-        printf(" %d - %s %s\n", count, current_user->username,
-               find_chat(current_user->username, 0) ? "" : "(Pedido necessario)");
-        count++;
+        if (find_chat(current_user->username, 0))
+        {
+            printf("  %2d) %s\n", count, current_user->username);
+            items[count].type = ITEM_USER;
+            items[count].ptr = current_user;
+            count++;
+        }
         current_user = current_user->next;
     }
 
     Group *current_group = groups;
-
     while (current_group != NULL)
     {
         if (find_chat(current_group->name, 1))
         {
-            printf(" %d - %s (Grupo)\n", count, current_group->name);
+            printf("  %2d) %s [Grupo]\n", count, current_group->name);
+            items[count].type = ITEM_GROUP;
+            items[count].ptr = current_group;
             count++;
         }
-
         current_group = current_group->next;
     }
 
-    printf("\n0 - Voltar\n");
-    printf("---------------------------\n");
-    printf("\nSelecione o número da conversa que deseja entrar:\n");
+    printf("\n[Precisam de permissão para iniciar uma conversa]\n");
+    current_user = users;
+    while (current_user != NULL)
+    {
+        if (!find_chat(current_user->username, 0))
+        {
+            printf("  %2d) %s\n", count, current_user->username);
+            items[count].type = ITEM_USER;
+            items[count].ptr = current_user;
+            count++;
+        }
+        current_user = current_user->next;
+    }
+
+    printf("\n--------------------------------------------------------\n");
+    printf("  0) Voltar\n");
+    printf("========================================================\n");
+    printf("Selecione o número da conversa que deseja entrar: ");
 
     char buffer[256];
     fgets(buffer, sizeof(buffer), stdin);
@@ -236,44 +281,31 @@ void show_chat_menu()
     if (choice == 0)
         return;
 
-    int total = count - 1;
-
-    if (choice < 1 || choice > total)
+    if (choice < 1 || choice >= count)
     {
         printf("Índice inválido.\n");
         return;
     }
 
-    if (choice <= user_count())
+    MenuItem selected = items[choice];
+    if (selected.type == ITEM_USER)
     {
-        Users *u = users;
-        for (int i = 1; i < choice && u; i++)
-            u = u->next;
+        Users *u = (Users *)selected.ptr;
+        printf("Você entrou no chat privado com: %s\n", u->username);
 
-        if (u)
+        if (find_chat(u->username, 0) == NULL)
         {
-            printf("Você entrou no chat privado com: %s\n", u->username);
-            if (find_chat(u->username, 0) == NULL)
-            {
-                char new_message[256];
-                char topic[256];
-                sprintf(new_message, "%d;", IDCONTROL_CHAT_INVITATION);
-
-                sprintf(topic, "%s_CONTROL", u->username);
-                send_message(new_message, topic);
-
-                printf("Pedido para iniciar chat enviado para %s\n", u->username);
-            }
+            char new_message[256];
+            char topic[256];
+            sprintf(new_message, "%d;", IDCONTROL_CHAT_INVITATION);
+            sprintf(topic, "%s_CONTROL", u->username);
+            send_message(new_message, topic);
+            printf("Pedido para iniciar chat enviado para %s\n", u->username);
         }
     }
-    else
+    else if (selected.type == ITEM_GROUP)
     {
-        int group_index = choice - user_count();
-        Group *g = groups;
-        for (int i = 1; i < group_index && g; i++)
-            g = g->next;
-
-        if (g)
-            printf("Você entrou no grupo: %s\n", g->name);
+        Group *g = (Group *)selected.ptr;
+        printf("Você entrou no grupo: %s\n", g->name);
     }
 }

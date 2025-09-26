@@ -9,3 +9,14 @@ Leader: user1
 Participants:
 - user2 (pending)
 
+Group: teste grupo novo
+Leader: user1
+Participants:
+- user (pending)
+
+Group: avc
+Leader: user
+Participants:
+- user2 (pending)
+- user1 (active)
+

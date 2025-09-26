@@ -308,6 +308,21 @@ void control_msg()
 
             remove_control_message(index);
         }
+        else if (msg->type == MESSAGE_GROUP_ASK_TO_JOIN)
+        {
+            printf("entrou 2\n");
+
+            sprintf(message, "%d;%s;", GROUP_INVITATION_ACCEPTED, group_name);
+
+            send_message(message, "GROUPS");
+
+            if (!add_participant_to_group_file(group_name, msg->from, get_group_by_name(group_name), 0))
+            {
+                printf("Erro ao adicionar participante no arquivo de grupos\n");
+            }
+
+            remove_control_message(index);
+        }
     }
     else
     {
@@ -349,9 +364,9 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     {
         add_user(from);
 
-        printf("%s\n", (char *)message->payload);
-        printf("%s\n", from);
+        // printf("%s\n", (char *)message->payload);
         // printf("%s\n", from);
+        //  printf("%s\n", from);
 
         if (check_status(msg) == 1)
         {
@@ -368,10 +383,10 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
         if (strcmp(user_id, from) == 0)
             return;
-        printf("ENTROU NO GROUPS\n");
+        // printf("ENTROU NO GROUPS\n");
         if (strncmp(msg, "Group:", 6) == 0)
         {
-            printf("ENTROU NO GROUP CREATE\n");
+            // printf("ENTROU NO GROUP CREATE\n");
             add_group_by_message(msg);
         }
         else
@@ -393,7 +408,15 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
                 Group *group = get_group_by_name(group_name);
 
-                change_participant_status(group, from, 0);
+                if (get_participant_by_username(group, from) == NULL)
+                {
+                    printf("ENTROU NO ADD PARTICIPANT\n");
+                    add_participant(group, from, 0);
+                }
+                else
+                {
+                    change_participant_status(group, from, 0);
+                }
             }
             else if (option == GROUP_INVITATION_REJECTED)
             {
@@ -425,7 +448,6 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
         }
         else if (option == IDCONTROL_CHAT_INVITATION)
         {
-            // sprintf(new_msg, "Pede para voce entrar no chat", from);
             add_control_message(topic, from, "Pede para voce entrar no chat", MESSAGE_CHAT_INVITATION);
         }
         else if (option == IDCONTROL_CHAT_INVITATION_ACCEPTED)
