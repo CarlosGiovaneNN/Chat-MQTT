@@ -159,6 +159,7 @@ void add_control_message(char topic[], char from[], char msg[], int type)
     add_message(&control_messages, msg, topic, from, type);
 }
 
+// TO DO
 void clear_unread_messages()
 {
     // falta fazer correto, com o free em tds
@@ -230,6 +231,49 @@ Messages *get_control_message(int index)
         count++;
     }
     return NULL;
+}
+
+void read_pending_messages_control()
+{
+    Group *current_group = groups;
+
+    while (current_group != NULL)
+    {
+        Participant *p = get_participant_by_username(current_group, user_id);
+        if (p && p->pending == 1)
+        {
+            Messages *msg_node = get_control_message(0);
+            int found = 0;
+
+            while (msg_node != NULL)
+            {
+
+                char *group_name = strstr(msg_node->payload, "grupo: ");
+
+                if (group_name)
+                {
+                    group_name += strlen("grupo: ");
+                }
+
+                if (msg_node->type == MESSAGE_GROUP_INVITATION && strcmp(group_name, current_group->name) == 0)
+                {
+                    found = 1;
+                    break;
+                }
+                msg_node = msg_node->next;
+            }
+
+            if (!found)
+            {
+                char new_msg[256];
+
+                sprintf(new_msg, "Convidou voce para o grupo: %s", current_group->name);
+                add_control_message(current_group->name, user_id, new_msg, MESSAGE_GROUP_INVITATION);
+            }
+        }
+
+        current_group = current_group->next;
+    }
 }
 
 void control_msg()

@@ -24,7 +24,7 @@ void connlost(void *context, char *cause)
 
     printf("Reconnecting...\n");
     conn_opts.keepAliveInterval = 20;
-    conn_opts.cleanstart = 1;
+    conn_opts.cleanstart = 0;
     conn_opts.onSuccess = on_connect;
     conn_opts.onFailure = on_connect_failure;
     conn_opts.context = client;

@@ -4,6 +4,7 @@
 #include "shell/shell.h"
 
 #include "../client/client.h"
+#include "../message/message.h"
 
 pthread_t thread_status, thread_shell;
 
@@ -13,6 +14,9 @@ int create_threads()
     {
         usleep(100000);
     }
+
+    printf("Threads criadas\n");
+    read_pending_messages_control();
 
     if (pthread_create(&thread_status, NULL, &run_status_publisher, NULL) != 0)
     {

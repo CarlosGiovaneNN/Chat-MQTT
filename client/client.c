@@ -12,7 +12,7 @@ int connect_client()
     int rc;
 
     conn_opts.keepAliveInterval = 20;
-    conn_opts.cleansession = 1;
+    conn_opts.cleansession = 0;
     conn_opts.automaticReconnect = 1;
     conn_opts.context = client;
 
