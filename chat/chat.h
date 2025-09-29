@@ -3,7 +3,12 @@
 
 void show_chat_menu();
 void load_chats_from_file();
+void show_message_from_user(char *date, char *msg);
+void show_message_from_other(char *from, char *date, char *msg);
+void subscribe_all_chats();
 
 char *create_chat(char *name, int is_group);
+
+extern char selected_chat[100];
 
 #endif

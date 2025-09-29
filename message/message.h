@@ -11,6 +11,8 @@ void control_msg();
 
 void read_pending_messages_control();
 
+void print_all_msgs_from_chat(char *topic);
+
 int send_message(char msg[], char topic[]);
 
 #endif

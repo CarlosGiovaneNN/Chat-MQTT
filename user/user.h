@@ -12,7 +12,7 @@ void add_user(char username[]);
 void change_status(char username[], int status);
 void update_user_id(char id[]);
 
-int check_status(const char *msg);
+int check_status(char *msg);
 int user_count();
 
 Users *get_user_by_index(int index);

@@ -4,37 +4,26 @@
 #include "../message/message.h"
 #include "../user/user.h"
 
+#include "../client/mqtt.h"
+
 Chat *chats = NULL;
 
-void add_chat_by_message(char *message, char *from);
+char selected_chat[100] = "";
+
 void load_chats_by_groups();
 void load_chats_from_file();
 void show_chat_menu();
+void update_selected_chat(char *name);
+void load_chat();
+void show_message_from_user(char *date, char *msg);
+void show_message_from_other(char *from, char *date, char *msg);
+void load_messages(char *topic);
+void subscribe_all_chats();
 
 char *create_chat(char *name, int is_group);
 
 Chat *find_chat(char *name, int is_group);
-
-// N USADA
-void add_chat_by_message(char *message, char *from)
-{
-    Chat *chat = malloc(sizeof(Chat));
-    if (!chat)
-        return;
-
-    strncpy(chat->topic, message, sizeof(chat->topic) - 1);
-    chat->topic[sizeof(chat->topic) - 1] = '\0';
-
-    chat->is_group = 0;
-    chat->participants = NULL;
-
-    pthread_mutex_lock(&mutex_chats);
-
-    chat->next = chats;
-    chats = chat;
-
-    pthread_mutex_unlock(&mutex_chats);
-}
+Chat *find_chat_by_topic(char *topic);
 
 // CARREGA OS GRUPOS NO ARRAY DE CHAT
 void load_chats_by_groups()
@@ -232,11 +221,20 @@ void show_chat_menu()
     int choice = atoi(buffer);
 
     if (choice == 0)
+    {
+        pthread_mutex_unlock(&mutex_users);
+        pthread_mutex_unlock(&mutex_groups);
+
         return;
+    }
 
     if (choice < 1 || choice >= count)
     {
         printf("Índice inválido.\n");
+
+        pthread_mutex_unlock(&mutex_users);
+        pthread_mutex_unlock(&mutex_groups);
+
         return;
     }
 
@@ -244,7 +242,6 @@ void show_chat_menu()
     if (selected.type == ITEM_USER)
     {
         Users *u = (Users *)selected.ptr;
-        printf("Você entrou no chat privado com: %s\n", u->username);
 
         if (find_chat(u->username, 0) == NULL)
         {
@@ -255,15 +252,98 @@ void show_chat_menu()
             send_message(new_message, topic);
             printf("Pedido para iniciar chat enviado para %s\n", u->username);
         }
+        else
+        {
+            printf("Você entrou no chat privado com: %s\n", u->username);
+
+            strcpy(selected_chat, find_chat(u->username, 0)->topic);
+        }
     }
     else if (selected.type == ITEM_GROUP)
     {
         Group *g = (Group *)selected.ptr;
         printf("Você entrou no grupo: %s\n", g->name);
+
+        strcpy(selected_chat, g->name);
     }
 
     pthread_mutex_unlock(&mutex_users);
     pthread_mutex_unlock(&mutex_groups);
+
+    load_chat();
+}
+
+void load_chat()
+{
+    load_messages(selected_chat);
+
+    while (1)
+    {
+        char buffer[256];
+
+        fgets(buffer, sizeof(buffer), stdin);
+
+        buffer[strcspn(buffer, "\n")] = '\0';
+
+        if (strcmp(buffer, "/quit") == 0)
+            break;
+
+        send_message(buffer, selected_chat);
+    }
+
+    strcpy(selected_chat, "");
+}
+
+void load_messages(char *topic)
+{
+    pthread_mutex_lock(&mutex_chats);
+
+    Chat *chat = find_chat_by_topic(topic) ? find_chat_by_topic(topic) : find_chat_by_topic(topic);
+
+    if (!chat)
+    {
+        printf("Chat inexistente.\n");
+        pthread_mutex_unlock(&mutex_chats);
+
+        return;
+    }
+
+    printf("Chat: %s\n", chat->topic);
+
+    print_all_msgs_from_chat(chat->topic);
+
+    pthread_mutex_unlock(&mutex_chats);
+}
+
+void show_message_from_user(char *date, char *msg)
+{
+    printf("[%s] %s: %s\n", date, user_id, msg);
+}
+
+void show_message_from_other(char *from, char *date, char *msg)
+{
+    printf("[%s] %s: %s\n", date, from, msg);
+}
+
+// ATUALIZA O NOME DO CHAT SELECIONADO
+void update_selected_chat(char *name)
+{
+    strcpy(selected_chat, name);
+}
+
+void subscribe_all_chats()
+{
+    pthread_mutex_lock(&mutex_chats);
+
+    Chat *current_chat = chats;
+
+    while (current_chat != NULL)
+    {
+        subscribe_topic(current_chat->topic);
+        current_chat = current_chat->next;
+    }
+
+    pthread_mutex_unlock(&mutex_chats);
 }
 
 // CRIA UM NOVO CHAT
@@ -288,7 +368,7 @@ char *create_chat(char *name, int is_group)
 
     if (is_group)
     {
-
+        printf("Grupos disponíveis:\n");
         pthread_mutex_lock(&mutex_groups);
 
         Group *g = get_group_by_name(name);
@@ -304,9 +384,12 @@ char *create_chat(char *name, int is_group)
         pthread_mutex_unlock(&mutex_groups);
 
         strcpy(chat->topic, name);
+
+        subscribe_topic(chat->topic);
     }
     else
     {
+        printf("Usuários disponíveis:\n");
         chat->participants = NULL;
 
         FILE *file = fopen(FILE_CHATS, "a");
@@ -323,6 +406,8 @@ char *create_chat(char *name, int is_group)
         fclose(file);
 
         sprintf(chat->topic, "%s_%s_%s", user_id, name, timestamp);
+
+        subscribe_topic(chat->topic);
     }
 
     pthread_mutex_unlock(&mutex_chats);
@@ -339,6 +424,27 @@ Chat *find_chat(char *name, int is_group)
     while (c)
     {
         if (c->is_group == is_group && strcmp(c->to, name) == 0)
+        {
+            pthread_mutex_unlock(&mutex_chats);
+
+            return c;
+        }
+        c = c->next;
+    }
+
+    pthread_mutex_unlock(&mutex_chats);
+
+    return NULL;
+}
+
+Chat *find_chat_by_topic(char *topic)
+{
+    pthread_mutex_lock(&mutex_chats);
+
+    Chat *c = chats;
+    while (c)
+    {
+        if (strcmp(c->topic, topic) == 0)
         {
             pthread_mutex_unlock(&mutex_chats);
 

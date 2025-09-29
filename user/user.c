@@ -40,7 +40,9 @@ void load_users_from_file()
 {
     FILE *f = fopen(FILE_USERS, "r");
     if (!f)
+    {
         return;
+    }
 
     char line[256];
     while (fgets(line, sizeof(line), f))
@@ -50,7 +52,9 @@ void load_users_from_file()
         if (strlen(line) > 0)
         {
             if (!find_user(line))
+            {
                 add_user(line);
+            }
         }
     }
 

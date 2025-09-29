@@ -20,12 +20,13 @@ void add_unread_message(char *payload, char topic[], char from[]);
 void add_control_message(char topic[], char from[], char msg[], int type);
 void clear_unread_messages();
 void remove_control_message(int index);
-void parse_message(const char *message, char *from, char *date, char *msg);
+void parse_message(char *message, char *from, char *date, char *msg);
 void print_messages(Messages *messages, pthread_mutex_t *mtx);
 void print_all_received_messages();
 void read_pending_messages_control();
 void control_msg();
 void on_recv_message(MQTTAsync_message *message, char *topic);
+void print_all_msgs_from_chat(char *topic);
 
 char *format_message();
 
@@ -166,7 +167,7 @@ void remove_control_message(int index)
     ]
 }
 */
-void parse_message(const char *message, char *from, char *date, char *msg)
+void parse_message(char *message, char *from, char *date, char *msg)
 {
     char buffer[200];
     strncpy(buffer, message, sizeof(buffer) - 1);
@@ -266,12 +267,11 @@ void read_pending_messages_control()
                 sprintf(new_msg, "Convidou voce para o grupo: %s", current_group->name);
                 add_control_message(current_group->name, user_id, new_msg, MESSAGE_GROUP_INVITATION);
             }
-
         }
-        
+
         current_group = current_group->next;
     }
-    
+
     pthread_mutex_unlock(&mutex_control);
     pthread_mutex_unlock(&mutex_groups);
 }
@@ -393,6 +393,9 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     char from[100], date[100], msg[100];
     parse_message((char *)message->payload, from, date, msg);
 
+    if (strlen(from) == 0 || strlen(date) == 0 || strlen(msg) == 0)
+        return;
+
     char id_control[100];
     sprintf(id_control, "%s_CONTROL", user_id);
 
@@ -402,11 +405,15 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
     if (strcmp(topic, "USERS") != 0) // dps remover
     {
-        // printf("%s\n", (char *)message->payload);
+        printf("%s\n", (char *)message->payload);
     }
 
     if (strcmp(topic, "USERS") == 0)
     {
+
+        if (strcmp(user_id, from) == 0)
+            return;
+
         add_user(from);
 
         // printf("%s\n", (char *)message->payload);
@@ -428,6 +435,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
         if (strcmp(user_id, from) == 0)
             return;
+
         // printf("ENTROU NO GROUPS\n");
         if (strncmp(msg, "Group:", 6) == 0)
         {
@@ -481,6 +489,10 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     }
     else if (strcmp(topic, id_control) == 0)
     {
+
+        if (strcmp(user_id, from) == 0)
+            return;
+
         int option;
         char new_msg[256];
 
@@ -529,23 +541,63 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
         }
         else
         {
-            if (strcmp(user_id, from) == 0)
-            {
-                return;
-            }
 
             printf("%s", (char *)message->payload);
         }
     }
     else
     {
-        if (strcmp(user_id, from) == 0)
-        {
-            return;
-        }
+        // printf("ENTROU NO ELSE\n");
 
-        add_unread_message(msg, topic, from);
+        if (strcmp(topic, selected_chat) != 0)
+        {
+            // printf("ENTROU NO IF\n");
+            if (strcmp(user_id, from) == 0)
+                return;
+
+            add_unread_message(msg, topic, from);
+        }
+        else
+        {
+            // printf("ENTROU NO ELSE\n");
+
+            add_all_received_message(msg, topic, from);
+
+            if (strcmp(user_id, from) == 0)
+                return;
+
+            show_message_from_other(from, topic, msg);
+        }
     }
+}
+
+void print_all_msgs_from_chat(char *topic)
+{
+    pthread_mutex_lock(&mutex_all_received);
+
+    Messages *current = all_received_messages;
+
+    while (current != NULL)
+    {
+        printf("ENTROU NO WHILE\n");
+        if (strcmp(current->topic, topic) == 0)
+        {
+            printf("ENTROU NO IF\n");
+            if (strcmp(current->from, user_id) == 0)
+            {
+                printf("ENTROU NO IF\n");
+                show_message_from_user(current->topic, current->payload);
+            }
+            else
+            {
+                printf("ENTROU NO ELSE\n");
+                show_message_from_other(current->from, current->topic, current->payload);
+            }
+        }
+        current = current->next;
+    }
+
+    pthread_mutex_unlock(&mutex_all_received);
 }
 
 // FORMATA A MENSAGEM COM O FORMATO CORRETO { USUARIO - DD/MM/AAAA HH:MM:SS - MENSAGEM }

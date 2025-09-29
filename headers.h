@@ -33,8 +33,8 @@
 
 // Files
 #define FILE_CHATS "chat/chat.txt"
-#define FILE_USERS "users/users.txt"
-#define FILE_GROUPS "groups/groups.txt"
+#define FILE_USERS "user/users.txt"
+#define FILE_GROUPS "group/groups.txt"
 
 typedef struct Participant
 {

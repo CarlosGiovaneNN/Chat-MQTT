@@ -1,5 +1,6 @@
 #include "../headers.h"
 
+#include "../chat/chat.h"
 #include "../group/group.h"
 #include "../message/message.h"
 #include "../user/user.h"
@@ -14,6 +15,7 @@ void on_subscribe(void *context, MQTTAsync_successData *response);
 void on_subscribe_failure(void *context, MQTTAsync_failureData *response);
 
 int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *message);
+int subscribe_topic(char *topic);
 
 // MENSAGEM DE PERDA DE CONEXAO
 void connlost(void *context, char *cause)
@@ -41,33 +43,20 @@ void connlost(void *context, char *cause)
 // CONECTA O CLIENTE
 void on_connect(void *context, MQTTAsync_successData *response)
 {
-    MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
-
-    printf("Connected successfully\n");
-
-    opts.onSuccess = on_subscribe;
-    opts.onFailure = on_subscribe_failure;
-    opts.context = client;
-
-    int rc;
-
     for (int i = 0; i < sizeof(default_topics) / sizeof(default_topics[0]); i++)
     {
-        const char *topic = default_topics[i];
-        if ((rc = MQTTAsync_subscribe(client, topic, QOS, &opts)) != MQTTASYNC_SUCCESS)
-        {
-            printf("Failed to start subscribe for topic %s, return code %d\n", topic, rc);
-        }
+        char *topic = default_topics[i];
+        subscribe_topic(topic);
     }
 
     char newTopic[100];
     sprintf(newTopic, "%s_CONTROL", user_id);
-    if ((rc = MQTTAsync_subscribe(client, newTopic, QOS, &opts)) != MQTTASYNC_SUCCESS)
-    {
-        printf("Failed to start subscribe for topic %s, return code %d\n", newTopic, rc);
-    }
 
-    printf("Subscribed successfully\n");
+    subscribe_topic(newTopic);
+
+    subscribe_all_chats();
+
+    printf("Connected successfully\n");
 }
 
 // AO FALHAR A CONEXAO
@@ -98,4 +87,27 @@ int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *m
     MQTTAsync_free(topic_name);
 
     return 1;
+}
+
+// INSCREVE O TOPICO
+int subscribe_topic(char *topic)
+{
+    MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
+
+    opts.onSuccess = on_subscribe;
+    opts.onFailure = on_subscribe_failure;
+    opts.context = client;
+
+    int rc;
+
+    printf("Subscribing to topic %s\n", topic);
+
+    if ((rc = MQTTAsync_subscribe(client, topic, QOS, &opts)) != MQTTASYNC_SUCCESS)
+    {
+        printf("Failed to start subscribe for topic %s, return code %d\n", topic, rc);
+
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
