@@ -13,6 +13,8 @@ void on_connect_failure(void *context, MQTTAsync_failureData *response);
 void on_subscribe(void *context, MQTTAsync_successData *response);
 void on_subscribe_failure(void *context, MQTTAsync_failureData *response);
 
+int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *message);
+
 void connlost(void *context, char *cause)
 {
     MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer5;
@@ -33,17 +35,6 @@ void connlost(void *context, char *cause)
     {
         printf("Failed to start reconnect, return code %d\n", rc);
     }
-}
-
-int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *message)
-{
-
-    on_recv_message(message, topic_name);
-
-    MQTTAsync_freeMessage(&message);
-    MQTTAsync_free(topic_name);
-
-    return 1;
 }
 
 void on_connect(void *context, MQTTAsync_successData *response)
@@ -84,9 +75,21 @@ void on_connect_failure(void *context, MQTTAsync_failureData *response)
 
 void on_subscribe(void *context, MQTTAsync_successData *response)
 {
+    // DO NOTHING
 }
 
 void on_subscribe_failure(void *context, MQTTAsync_failureData *response)
 {
     printf("Subscribe failed, rc %d\n", response->code);
+}
+
+int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *message)
+{
+
+    on_recv_message(message, topic_name);
+
+    MQTTAsync_freeMessage(&message);
+    MQTTAsync_free(topic_name);
+
+    return 1;
 }

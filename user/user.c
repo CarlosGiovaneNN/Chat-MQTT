@@ -1,37 +1,26 @@
-// #include "user.h"
 #include "../headers.h"
 
 Users *users = NULL;
 char user_id[100] = "";
 char file_users[] = "user/users.txt";
 
-Users *get_user_by_index(int index);
-void remove_substring(char *str, const char *sub);
-int find_user(char username[]);
+void remove_substring(char *str, char *sub);
 void print_users();
 void load_users_from_file();
-int user_exists_in_file(char *username);
 void save_user_to_file(char *username);
 void add_user(char username[]);
 void change_status(char username[], int status);
 void list_users();
 void update_user_id(char id[]);
 
-Users *get_user_by_index(int index)
-{
-    int count = 0;
-    for (Users *current = users; current != NULL; current = current->next)
-    {
-        if (count == index)
-        {
-            return current;
-        }
-        count++;
-    }
-    return NULL;
-}
+int user_exists_in_file(char *username);
+int find_user(char username[]);
+int user_count();
+int check_status(char *msg);
 
-void remove_substring(char *str, const char *sub)
+Users *get_user_by_index(int index);
+
+void remove_substring(char *str, char *sub)
 {
     char *pos, *temp;
     size_t len = strlen(sub);
@@ -41,22 +30,6 @@ void remove_substring(char *str, const char *sub)
         temp = pos + len;
         memmove(pos, temp, strlen(temp) + 1);
     }
-}
-
-int find_user(char username[])
-{
-    Users *current = users;
-
-    while (current != NULL)
-    {
-        if (strcmp(current->username, username) == 0)
-        {
-            return 1;
-        }
-        current = current->next;
-    }
-
-    return 0;
 }
 
 void print_users()
@@ -92,27 +65,6 @@ void load_users_from_file()
     fclose(f);
 }
 
-int user_exists_in_file(char *username)
-{
-    FILE *f = fopen(file_users, "r");
-    if (!f)
-        return 0;
-
-    char line[256];
-    while (fgets(line, sizeof(line), f))
-    {
-        line[strcspn(line, "\n")] = 0;
-        if (strcmp(line, username) == 0)
-        {
-            fclose(f);
-            return 1;
-        }
-    }
-
-    fclose(f);
-    return 0;
-}
-
 void save_user_to_file(char *username)
 {
     if (user_exists_in_file(username))
@@ -125,7 +77,6 @@ void save_user_to_file(char *username)
     fprintf(f, "%s\n", username);
     fclose(f);
 }
-
 
 void add_user(char username[])
 {
@@ -162,19 +113,6 @@ void change_status(char username[], int status)
         }
         current = current->next;
     }
-}
-
-int check_status(char *msg)
-{
-    if (strstr(msg, "disconnected") != NULL)
-    {
-        return 0;
-    }
-    else if (strstr(msg, "connected") != NULL)
-    {
-        return 1;
-    }
-    return -1; // nenhum dos dois
 }
 
 void list_users()
@@ -214,4 +152,68 @@ int user_count()
         current = current->next;
     }
     return count;
+}
+
+int check_status(char *msg)
+{
+    if (strstr(msg, "disconnected") != NULL)
+    {
+        return 0;
+    }
+    else if (strstr(msg, "connected") != NULL)
+    {
+        return 1;
+    }
+    return -1; // nenhum dos dois
+}
+
+int user_exists_in_file(char *username)
+{
+    FILE *f = fopen(file_users, "r");
+    if (!f)
+        return 0;
+
+    char line[256];
+    while (fgets(line, sizeof(line), f))
+    {
+        line[strcspn(line, "\n")] = 0;
+        if (strcmp(line, username) == 0)
+        {
+            fclose(f);
+            return 1;
+        }
+    }
+
+    fclose(f);
+    return 0;
+}
+
+int find_user(char username[])
+{
+    Users *current = users;
+
+    while (current != NULL)
+    {
+        if (strcmp(current->username, username) == 0)
+        {
+            return 1;
+        }
+        current = current->next;
+    }
+
+    return 0;
+}
+
+Users *get_user_by_index(int index)
+{
+    int count = 0;
+    for (Users *current = users; current != NULL; current = current->next)
+    {
+        if (count == index)
+        {
+            return current;
+        }
+        count++;
+    }
+    return NULL;
 }

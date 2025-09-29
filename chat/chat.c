@@ -8,58 +8,15 @@ Chat *chats = NULL;
 
 char file_chats[] = "chat/chat.txt";
 
-char *create_chat(char *name, int is_group)
-{
-    if (!name || strlen(name) == 0)
-        return NULL;
+void add_chat_by_message(char *message, char *from);
+void load_chats_by_groups();
+void load_chats_from_file();
+void show_chat_menu();
 
-    Chat *chat = malloc(sizeof(Chat));
-    if (!chat)
-        return NULL;
+char *create_chat(char *name, int is_group);
 
-    strncpy(chat->to, name, sizeof(chat->to) - 1);
-    chat->to[sizeof(chat->to) - 1] = '\0';
-
-    chat->is_group = is_group;
-    chat->next = chats;
-    chats = chat;
-
-    if (is_group)
-    {
-        Group *g = get_group_by_name(name);
-        if (g)
-        {
-            chat->participants = g->participants;
-        }
-        else
-        {
-            chat->participants = NULL;
-        }
-
-        strcpy(chat->topic, name);
-    }
-    else
-    {
-        chat->participants = NULL;
-
-        FILE *file = fopen(file_chats, "a");
-        if (!file)
-            return NULL;
-
-        time_t now = time(NULL);
-        struct tm *t = localtime(&now);
-        char timestamp[64];
-        strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", t);
-
-        fprintf(file, "%s_%s_%s\n", user_id, name, timestamp);
-
-        fclose(file);
-
-        sprintf(chat->topic, "%s_%s_%s", user_id, name, timestamp);
-    }
-
-    return chat->topic;
-}
+Chat *find_chat(char *name, int is_group);
+Chat *find_chat_by_to_and_type(const char *to, int is_group);
 
 void add_chat_by_message(char *message, char *from)
 {
@@ -142,19 +99,7 @@ void load_chats_by_groups()
     }
 }
 
-Chat *find_chat_by_to_and_type(const char *to, int is_group)
-{
-    Chat *c = chats;
-    while (c)
-    {
-        if (c->is_group == is_group && strcmp(c->to, to) == 0)
-            return c;
-        c = c->next;
-    }
-    return NULL;
-}
-
-void load_chats_from_file(void)
+void load_chats_from_file()
 {
     FILE *file = fopen(file_chats, "r");
     if (!file)
@@ -207,18 +152,6 @@ void load_chats_from_file(void)
     fclose(file);
 
     load_chats_by_groups();
-}
-
-Chat *find_chat(char *name, int is_group)
-{
-    Chat *c = chats;
-    while (c)
-    {
-        if (c->is_group == is_group && strcmp(c->to, name) == 0)
-            return c;
-        c = c->next;
-    }
-    return NULL;
 }
 
 void show_chat_menu()
@@ -308,4 +241,81 @@ void show_chat_menu()
         Group *g = (Group *)selected.ptr;
         printf("Você entrou no grupo: %s\n", g->name);
     }
+}
+
+char *create_chat(char *name, int is_group)
+{
+    if (!name || strlen(name) == 0)
+        return NULL;
+
+    Chat *chat = malloc(sizeof(Chat));
+    if (!chat)
+        return NULL;
+
+    strncpy(chat->to, name, sizeof(chat->to) - 1);
+    chat->to[sizeof(chat->to) - 1] = '\0';
+
+    chat->is_group = is_group;
+    chat->next = chats;
+    chats = chat;
+
+    if (is_group)
+    {
+        Group *g = get_group_by_name(name);
+        if (g)
+        {
+            chat->participants = g->participants;
+        }
+        else
+        {
+            chat->participants = NULL;
+        }
+
+        strcpy(chat->topic, name);
+    }
+    else
+    {
+        chat->participants = NULL;
+
+        FILE *file = fopen(file_chats, "a");
+        if (!file)
+            return NULL;
+
+        time_t now = time(NULL);
+        struct tm *t = localtime(&now);
+        char timestamp[64];
+        strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", t);
+
+        fprintf(file, "%s_%s_%s\n", user_id, name, timestamp);
+
+        fclose(file);
+
+        sprintf(chat->topic, "%s_%s_%s", user_id, name, timestamp);
+    }
+
+    return chat->topic;
+}
+
+Chat *find_chat(char *name, int is_group)
+{
+    Chat *c = chats;
+    while (c)
+    {
+        if (c->is_group == is_group && strcmp(c->to, name) == 0)
+            return c;
+        c = c->next;
+    }
+    return NULL;
+}
+
+Chat *find_chat_by_to_and_type(const char *to, int is_group)
+{
+    Chat *c = chats;
+    while (c)
+    {
+        if (c->is_group == is_group && strcmp(c->to, to) == 0)
+            return c;
+        c = c->next;
+    }
+    return NULL;
 }

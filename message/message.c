@@ -14,6 +14,25 @@ Messages *control_messages = NULL;
 void on_send(void *context, MQTTAsync_successData *response);
 void on_send_failure(void *context, MQTTAsync_failureData *response);
 
+void add_message(Messages **array, char payload[], char topic[], char from[], int type);
+void add_all_received_message(char *payload, char topic[], char from[]);
+void add_unread_message(char *payload, char topic[], char from[]);
+void add_control_message(char topic[], char from[], char msg[], int type);
+void clear_unread_messages();
+void remove_control_message(int index);
+void parse_message(const char *message, char *from, char *date, char *msg);
+void print_messages(Messages *messages);
+void print_all_received_messages();
+void read_pending_messages_control();
+void control_msg();
+void on_recv_message(MQTTAsync_message *message, char *topic);
+
+char *format_message();
+
+int send_message(char msg[], char topic[]);
+
+Messages *get_control_message(int index);
+
 void on_send(void *context, MQTTAsync_successData *response)
 {
     Send_Context *ctx = (Send_Context *)context;
@@ -33,87 +52,6 @@ void on_send_failure(void *context, MQTTAsync_failureData *response)
 
     deliveredtoken = 1;
     free(ctx);
-}
-
-void parse_message(const char *message, char *from, char *date, char *msg)
-{
-    char buffer[200];
-    strncpy(buffer, message, sizeof(buffer) - 1);
-    buffer[sizeof(buffer) - 1] = '\0'; // garante null terminator
-
-    char *token = strtok(buffer, "-");
-    if (token)
-        strcpy(from, token);
-
-    token = strtok(NULL, "-");
-    if (token)
-        strcpy(date, token);
-
-    token = strtok(NULL, "-");
-    if (token)
-        strcpy(msg, token);
-}
-
-char *format_message()
-{
-
-    time_t agora;
-    struct tm *infoTempo;
-
-    // 01/01/1970
-    time(&agora);
-    infoTempo = localtime(&agora);
-
-    char *message = malloc(128);
-    if (!message)
-        return NULL;
-
-    sprintf(message, "%s-%02d/%02d/%04d %02d:%02d:%02d-", user_id, infoTempo->tm_mday, infoTempo->tm_mon + 1,
-            infoTempo->tm_year + 1900, infoTempo->tm_hour, infoTempo->tm_min, infoTempo->tm_sec);
-
-    return message;
-}
-
-int send_message(char msg[], char topic[])
-{
-
-    MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
-    MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
-    int rc;
-
-    char payload[526];
-    char *prefix = format_message();
-    if (!prefix)
-        return EXIT_FAILURE;
-
-    strcpy(payload, prefix);
-    free(prefix);
-
-    strcat(payload, msg);
-
-    pubmsg.payload = (void *)payload;
-    pubmsg.payloadlen = (int)strlen(payload);
-    pubmsg.qos = QOS;
-    pubmsg.retained = 0;
-
-    Send_Context *ctx = malloc(sizeof(Send_Context));
-    ctx->client = client;
-    strcpy(ctx->topic, topic);
-
-    opts.onSuccess = on_send;
-    opts.onFailure = on_send_failure;
-    opts.context = ctx;
-    deliveredtoken = 0;
-
-    if ((rc = MQTTAsync_sendMessage(client, topic, &pubmsg, &opts)) != MQTTASYNC_SUCCESS)
-    {
-        printf("Failed to start sendMessage, return code %d\n", rc);
-        MQTTAsync_destroy(&client);
-        free(ctx);
-        return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
 }
 
 void add_message(Messages **array, char payload[], char topic[], char from[], int type)
@@ -166,6 +104,51 @@ void clear_unread_messages()
     unread_messages = NULL;
 }
 
+void remove_control_message(int index)
+{
+    int count = 1;
+
+    if (index > 0)
+    {
+        for (Messages *message = control_messages; message != NULL; message = message->next)
+        {
+            if (count == index)
+            {
+                Messages *aux = message->next;
+                message->next = message->next->next;
+                free(aux);
+                return;
+            }
+            count++;
+        }
+    }
+    else if (index == 0)
+    {
+        Messages *aux = control_messages;
+        control_messages = control_messages->next;
+        free(aux);
+    }
+}
+
+void parse_message(const char *message, char *from, char *date, char *msg)
+{
+    char buffer[200];
+    strncpy(buffer, message, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0'; // garante null terminator
+
+    char *token = strtok(buffer, "-");
+    if (token)
+        strcpy(from, token);
+
+    token = strtok(NULL, "-");
+    if (token)
+        strcpy(date, token);
+
+    token = strtok(NULL, "-");
+    if (token)
+        strcpy(msg, token);
+}
+
 void print_messages(Messages *messages)
 {
     int count = 1;
@@ -193,44 +176,6 @@ void print_messages(Messages *messages)
 void print_all_received_messages()
 {
     print_messages(all_received_messages);
-}
-
-void remove_control_message(int index)
-{
-    int count = 1;
-
-    if (index > 0)
-    {
-        for (Messages *message = control_messages; message != NULL; message = message->next)
-        {
-            if (count == index)
-            {
-                Messages *aux = message->next;
-                message->next = message->next->next;
-                free(aux);
-                return;
-            }
-            count++;
-        }
-    }
-    else if (index == 0)
-    {
-        Messages *aux = control_messages;
-        control_messages = control_messages->next;
-        free(aux);
-    }
-}
-
-Messages *get_control_message(int index)
-{
-    int count = 0;
-    for (Messages *message = control_messages; message != NULL; message = message->next)
-    {
-        if (count == index)
-            return message;
-        count++;
-    }
-    return NULL;
 }
 
 void read_pending_messages_control()
@@ -541,4 +486,78 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
         add_unread_message(msg, topic, from);
     }
+}
+
+char *format_message()
+{
+
+    time_t agora;
+    struct tm *infoTempo;
+
+    // 01/01/1970
+    time(&agora);
+    infoTempo = localtime(&agora);
+
+    char *message = malloc(128);
+    if (!message)
+        return NULL;
+
+    sprintf(message, "%s-%02d/%02d/%04d %02d:%02d:%02d-", user_id, infoTempo->tm_mday, infoTempo->tm_mon + 1,
+            infoTempo->tm_year + 1900, infoTempo->tm_hour, infoTempo->tm_min, infoTempo->tm_sec);
+
+    return message;
+}
+
+int send_message(char msg[], char topic[])
+{
+
+    MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
+    MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
+    int rc;
+
+    char payload[526];
+    char *prefix = format_message();
+    if (!prefix)
+        return EXIT_FAILURE;
+
+    strcpy(payload, prefix);
+    free(prefix);
+
+    strcat(payload, msg);
+
+    pubmsg.payload = (void *)payload;
+    pubmsg.payloadlen = (int)strlen(payload);
+    pubmsg.qos = QOS;
+    pubmsg.retained = 0;
+
+    Send_Context *ctx = malloc(sizeof(Send_Context));
+    ctx->client = client;
+    strcpy(ctx->topic, topic);
+
+    opts.onSuccess = on_send;
+    opts.onFailure = on_send_failure;
+    opts.context = ctx;
+    deliveredtoken = 0;
+
+    if ((rc = MQTTAsync_sendMessage(client, topic, &pubmsg, &opts)) != MQTTASYNC_SUCCESS)
+    {
+        printf("Failed to start sendMessage, return code %d\n", rc);
+        MQTTAsync_destroy(&client);
+        free(ctx);
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+Messages *get_control_message(int index)
+{
+    int count = 0;
+    for (Messages *message = control_messages; message != NULL; message = message->next)
+    {
+        if (count == index)
+            return message;
+        count++;
+    }
+    return NULL;
 }

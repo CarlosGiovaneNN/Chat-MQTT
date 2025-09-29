@@ -8,17 +8,24 @@ Group *groups = NULL;
 
 char file_groups[] = "group/groups.txt";
 
-Group *get_group_by_index(int index)
-{
-    int count = 0;
-    for (Group *current = groups; current != NULL; current = current->next)
-    {
-        if (count == index)
-            return current;
-        count++;
-    }
-    return NULL;
-}
+void create_group(char *group_name, char *leader);
+void add_participant(Group *group, char *username, int pending);
+void save_group(Group *g);
+void change_participant_status(Group *group, char *username, int pending);
+void add_group_by_message(char *message);
+void create_group_menu();
+void load_groups_from_file();
+void list_groups();
+void aks_to_join_group(Group *group);
+void join_group_menu();
+
+int toggle_participant_status_file(Group *group, char *username);
+int add_participant_to_group_file(char *group_name, char *username, Group *group, int pending);
+
+Group *get_group_by_index(int index);
+Group *get_group_by_name(char *group_name);
+
+Participant *get_participant_by_username(Group *group, char *username);
 
 void create_group(char *group_name, char *leader)
 {
@@ -61,74 +68,6 @@ void add_participant(Group *group, char *username, int pending)
     }
 }
 
-int add_participant_to_group_file(char *group_name, char *username, Group *group, int pending)
-{
-    FILE *in = fopen(file_groups, "r");
-    if (!in)
-    {
-        perror("Erro ao abrir group.txt");
-        return 0;
-    }
-
-    FILE *out = fopen("tmp.txt", "w");
-    if (!out)
-    {
-        perror("Erro ao criar tmp.txt");
-        fclose(in);
-        return 0;
-    }
-
-    char line[256];
-    int inside_group = 0;
-    int group_found = 0;
-
-    while (fgets(line, sizeof(line), in))
-    {
-        fputs(line, out);
-
-        if (strncmp(line, "Group: ", 7) == 0)
-        {
-            char current_group[100];
-            sscanf(line + 7, "%[^\n]", current_group);
-
-            if (strcmp(current_group, group_name) == 0)
-            {
-                inside_group = 1;
-                group_found = 1;
-            }
-            else
-            {
-                inside_group = 0;
-            }
-        }
-
-        if (inside_group && strncmp(line, "Participants:", 12) == 0)
-        {
-            // DO NOTHING
-        }
-        else if (inside_group && strncmp(line, "Group: ", 7) == 0)
-        {
-            fprintf(out, "- %s (%s)\n", username, pending ? "pending" : "active");
-            inside_group = 0;
-        }
-    }
-
-    if (inside_group)
-    {
-        fprintf(out, "- %s (%s)\n", username, pending ? "pending" : "active");
-    }
-
-    fclose(in);
-    fclose(out);
-
-    add_participant(group, username, pending);
-
-    remove(file_groups);
-    rename("tmp.txt", file_groups);
-
-    return group_found;
-}
-
 void save_group(Group *g)
 {
     FILE *f = fopen(file_groups, "a");
@@ -145,64 +84,6 @@ void save_group(Group *g)
     fprintf(f, "\n");
 
     fclose(f);
-}
-
-int toggle_participant_status_file(Group *group, char *username)
-{
-    if (!group)
-        return 0;
-
-    Participant *p = group->participants;
-    while (p)
-    {
-        if (strcmp(p->username, username) == 0)
-        {
-            p->pending = !p->pending;
-
-            FILE *in = fopen(file_groups, "r");
-            if (!in)
-                return 0;
-
-            FILE *out = fopen("tmp.txt", "w");
-            if (!out)
-            {
-                fclose(in);
-                return 0;
-            }
-
-            char line[256];
-
-            while (fgets(line, sizeof(line), in))
-            {
-                // remove \n ou \r\n do final
-                line[strcspn(line, "\r\n")] = 0;
-
-                if (strstr(line, username) && strstr(line, "(pending)"))
-                {
-                    fprintf(out, "- %s (active)\n", username);
-                }
-                else if (strstr(line, username) && strstr(line, "(active)"))
-                {
-                    fprintf(out, "- %s (pending)\n", username);
-                }
-                else
-                {
-                    fprintf(out, "%s\n", line);
-                }
-            }
-
-            fclose(in);
-            fclose(out);
-
-            remove(file_groups);
-            rename("tmp.txt", file_groups);
-
-            return 1;
-        }
-        p = p->next;
-    }
-
-    return 0;
 }
 
 void change_participant_status(Group *group, char *username, int pending)
@@ -478,19 +359,6 @@ void list_groups()
     }
 }
 
-Group *get_group_by_name(char *group_name)
-{
-    for (Group *g = groups; g != NULL; g = g->next)
-    {
-        if (strcmp(g->name, group_name) == 0)
-        {
-            return g;
-        }
-    }
-
-    return NULL;
-}
-
 void aks_to_join_group(Group *group)
 {
     char message[256];
@@ -561,6 +429,157 @@ void join_group_menu()
     {
         aks_to_join_group(group);
     }
+}
+
+int toggle_participant_status_file(Group *group, char *username)
+{
+    if (!group)
+        return 0;
+
+    Participant *p = group->participants;
+    while (p)
+    {
+        if (strcmp(p->username, username) == 0)
+        {
+            p->pending = !p->pending;
+
+            FILE *in = fopen(file_groups, "r");
+            if (!in)
+                return 0;
+
+            FILE *out = fopen("tmp.txt", "w");
+            if (!out)
+            {
+                fclose(in);
+                return 0;
+            }
+
+            char line[256];
+
+            while (fgets(line, sizeof(line), in))
+            {
+                // remove \n ou \r\n do final
+                line[strcspn(line, "\r\n")] = 0;
+
+                if (strstr(line, username) && strstr(line, "(pending)"))
+                {
+                    fprintf(out, "- %s (active)\n", username);
+                }
+                else if (strstr(line, username) && strstr(line, "(active)"))
+                {
+                    fprintf(out, "- %s (pending)\n", username);
+                }
+                else
+                {
+                    fprintf(out, "%s\n", line);
+                }
+            }
+
+            fclose(in);
+            fclose(out);
+
+            remove(file_groups);
+            rename("tmp.txt", file_groups);
+
+            return 1;
+        }
+        p = p->next;
+    }
+
+    return 0;
+}
+
+int add_participant_to_group_file(char *group_name, char *username, Group *group, int pending)
+{
+    FILE *in = fopen(file_groups, "r");
+    if (!in)
+    {
+        perror("Erro ao abrir group.txt");
+        return 0;
+    }
+
+    FILE *out = fopen("tmp.txt", "w");
+    if (!out)
+    {
+        perror("Erro ao criar tmp.txt");
+        fclose(in);
+        return 0;
+    }
+
+    char line[256];
+    int inside_group = 0;
+    int group_found = 0;
+
+    while (fgets(line, sizeof(line), in))
+    {
+        fputs(line, out);
+
+        if (strncmp(line, "Group: ", 7) == 0)
+        {
+            char current_group[100];
+            sscanf(line + 7, "%[^\n]", current_group);
+
+            if (strcmp(current_group, group_name) == 0)
+            {
+                inside_group = 1;
+                group_found = 1;
+            }
+            else
+            {
+                inside_group = 0;
+            }
+        }
+
+        if (inside_group && strncmp(line, "Participants:", 12) == 0)
+        {
+            // DO NOTHING
+        }
+        else if (inside_group && strncmp(line, "Group: ", 7) == 0)
+        {
+            fprintf(out, "- %s (%s)\n", username, pending ? "pending" : "active");
+            inside_group = 0;
+        }
+    }
+
+    if (inside_group)
+    {
+        fprintf(out, "- %s (%s)\n", username, pending ? "pending" : "active");
+    }
+
+    fclose(in);
+    fclose(out);
+
+    add_participant(group, username, pending);
+
+    remove(file_groups);
+    rename("tmp.txt", file_groups);
+
+    return group_found;
+}
+
+Group *get_group_by_index(int index)
+{
+    int count = 0;
+    for (Group *current = groups; current != NULL; current = current->next)
+    {
+        if (count == index)
+            return current;
+        count++;
+    }
+    return NULL;
+}
+
+Group *get_group_by_name(char *group_name)
+{
+    for (Group *g = groups; g != NULL; g = g->next)
+    {
+        if (strcmp(g->name, group_name) == 0)
+        {
+            return g;
+        }
+    }
+
+    return NULL;
 }
 
 Participant *get_participant_by_username(Group *group, char *username)
