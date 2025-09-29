@@ -14,6 +14,7 @@ int connect_client();
 int init_client();
 int is_connected();
 
+// MOSTRA AS OPCOES DE RECONEXAO
 void show_reconnect_options()
 {
     printf("Voce deseja reconectar? (s/n)\n");
@@ -33,11 +34,13 @@ void show_reconnect_options()
     MQTTAsync_destroy(&client);
 }
 
+// MENSAGEM DE DESCONEXAO
 void on_disconnect_success(void *context, MQTTAsync_successData *response)
 {
     printf("Desconectado do broker.\n");
 }
 
+// DESCONECTA O CLIENTE
 void close_client()
 {
     send_message("disconnected", "USERS");
@@ -63,6 +66,7 @@ void close_client()
     }
 }
 
+// CONECTA O CLIENTE
 int connect_client()
 {
     MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
@@ -86,6 +90,7 @@ int connect_client()
     return EXIT_SUCCESS;
 }
 
+// INICIALIZA O CLIENTE
 int init_client()
 {
     MQTTAsync_createOptions create_opts = MQTTAsync_createOptions_initializer;
@@ -113,6 +118,7 @@ int init_client()
     return EXIT_SUCCESS;
 }
 
+// VERIFICA SE O CLIENTE ESTA CONECTADO
 int is_connected()
 {
     return MQTTAsync_isConnected(client);

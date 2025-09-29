@@ -14,9 +14,8 @@ void show_chat_menu();
 char *create_chat(char *name, int is_group);
 
 Chat *find_chat(char *name, int is_group);
-Chat *find_chat_by_to_and_type(const char *to, int is_group);
 
-// DONE
+// N USADA
 void add_chat_by_message(char *message, char *from)
 {
     Chat *chat = malloc(sizeof(Chat));
@@ -37,7 +36,7 @@ void add_chat_by_message(char *message, char *from)
     pthread_mutex_unlock(&mutex_chats);
 }
 
-// DONE
+// CARREGA OS GRUPOS NO ARRAY DE CHAT
 void load_chats_by_groups()
 {
     pthread_mutex_lock(&mutex_groups);
@@ -110,7 +109,7 @@ void load_chats_by_groups()
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// DONE
+// CARREGA OS CHATS DO ARQUIVO
 void load_chats_from_file()
 {
     FILE *file = fopen(FILE_CHATS, "r");
@@ -144,7 +143,7 @@ void load_chats_from_file()
         else
             continue;
 
-        if (find_chat_by_to_and_type(other, 0) != NULL)
+        if (find_chat(other, 0) != NULL)
             continue;
 
         Chat *chat = malloc(sizeof(Chat));
@@ -170,7 +169,7 @@ void load_chats_from_file()
     load_chats_by_groups();
 }
 
-// DONE
+// MOSTRA AS CONVERSAS DISPONIVEIS
 void show_chat_menu()
 {
     MenuItem items[256];
@@ -267,7 +266,7 @@ void show_chat_menu()
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// DONE
+// CRIA UM NOVO CHAT
 char *create_chat(char *name, int is_group)
 {
     if (!name || strlen(name) == 0)
@@ -331,7 +330,7 @@ char *create_chat(char *name, int is_group)
     return chat->topic;
 }
 
-// DONE
+// ENCONTRA UM CHAT PELO NOME
 Chat *find_chat(char *name, int is_group)
 {
     pthread_mutex_lock(&mutex_chats);
@@ -340,28 +339,6 @@ Chat *find_chat(char *name, int is_group)
     while (c)
     {
         if (c->is_group == is_group && strcmp(c->to, name) == 0)
-        {
-            pthread_mutex_unlock(&mutex_chats);
-
-            return c;
-        }
-        c = c->next;
-    }
-
-    pthread_mutex_unlock(&mutex_chats);
-
-    return NULL;
-}
-
-// DONE
-Chat *find_chat_by_to_and_type(const char *to, int is_group)
-{
-    pthread_mutex_lock(&mutex_chats);
-
-    Chat *c = chats;
-    while (c)
-    {
-        if (c->is_group == is_group && strcmp(c->to, to) == 0)
         {
             pthread_mutex_unlock(&mutex_chats);
 

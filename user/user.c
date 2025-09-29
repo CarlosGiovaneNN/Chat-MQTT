@@ -3,7 +3,6 @@
 Users *users = NULL;
 char user_id[100] = "";
 
-void remove_substring(char *str, char *sub);
 void print_users();
 void load_users_from_file();
 void save_user_to_file(char *username);
@@ -19,20 +18,7 @@ int check_status(char *msg);
 
 Users *get_user_by_index(int index);
 
-// DO NOTHING
-void remove_substring(char *str, char *sub)
-{
-    char *pos, *temp;
-    size_t len = strlen(sub);
-
-    while ((pos = strstr(str, sub)) != NULL)
-    {
-        temp = pos + len;
-        memmove(pos, temp, strlen(temp) + 1);
-    }
-}
-
-// DONE
+// PRINTA OS USERS
 void print_users()
 {
     pthread_mutex_lock(&mutex_users);
@@ -49,7 +35,7 @@ void print_users()
     pthread_mutex_unlock(&mutex_users);
 }
 
-// DO NOTHING
+// CARREGA OS USERS DO ARQUIVO
 void load_users_from_file()
 {
     FILE *f = fopen(FILE_USERS, "r");
@@ -71,7 +57,7 @@ void load_users_from_file()
     fclose(f);
 }
 
-// DO NOTHING
+// SALVA O USER NO ARQUIVO
 void save_user_to_file(char *username)
 {
     if (user_exists_in_file(username))
@@ -85,7 +71,7 @@ void save_user_to_file(char *username)
     fclose(f);
 }
 
-// DONE
+// ADICIONA O USER
 void add_user(char username[])
 {
     int status = 0;
@@ -113,7 +99,7 @@ void add_user(char username[])
     save_user_to_file(username);
 }
 
-// DONE
+// MUDA DE STATUS O USER ( ONLINE / OFFLINE )
 void change_status(char username[], int status)
 {
     pthread_mutex_lock(&mutex_users);
@@ -136,7 +122,7 @@ void change_status(char username[], int status)
     pthread_mutex_unlock(&mutex_users);
 }
 
-// DONE
+// LISTA OS USERS
 void list_users()
 {
     pthread_mutex_lock(&mutex_users);
@@ -165,14 +151,14 @@ void list_users()
     printf("\n");
 }
 
-// DO NOTHING
+// ATUALIZA O USER ID DO USER LOCAL (QUE ESTA CONECTADO NO TERMINAL)
 void update_user_id(char id[])
 {
     strncpy(user_id, id, sizeof(user_id) - 1);
     user_id[sizeof(user_id) - 1] = '\0';
 }
 
-// DONE
+// TOTAL DE USERS
 int user_count()
 {
     pthread_mutex_lock(&mutex_users);
@@ -190,7 +176,7 @@ int user_count()
     return count;
 }
 
-// DO NOTHING
+// VIZUALIZA O STATUS DO USER ( ONLINE(1) / OFFLINE(0) / NENHUM(-1) ) - PARA A MSG STATUS PUBLISHER
 int check_status(char *msg)
 {
     if (strstr(msg, "disconnected") != NULL)
@@ -204,7 +190,7 @@ int check_status(char *msg)
     return -1; // nenhum dos dois
 }
 
-// DO NOTHING
+// VERIFICA QUE O USER ESTA SALVO NO ARQUIVO
 int user_exists_in_file(char *username)
 {
     FILE *f = fopen(FILE_USERS, "r");
@@ -226,7 +212,7 @@ int user_exists_in_file(char *username)
     return 0;
 }
 
-// DONE
+// VERIFICA SE O USUARIO EXISTE, SE EXISTIR RETORNA 1
 int find_user(char username[])
 {
     pthread_mutex_lock(&mutex_users);
@@ -248,7 +234,7 @@ int find_user(char username[])
     return 0;
 }
 
-// DONE
+// RETORNA O USER POR INDEX
 Users *get_user_by_index(int index)
 {
     int count = 0;

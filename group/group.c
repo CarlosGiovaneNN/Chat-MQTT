@@ -25,7 +25,7 @@ Group *get_group_by_name(char *group_name);
 
 Participant *get_participant_by_username(Group *group, char *username);
 
-// DONE
+// CRIA UM NOVO GRUPO E JA ADICIONA AO CHAT
 void create_group(char *group_name, char *leader)
 {
     Group *new_group = malloc(sizeof(Group));
@@ -47,7 +47,7 @@ void create_group(char *group_name, char *leader)
     create_chat(group_name, 1);
 }
 
-// DONE
+// ADICIONA UM PARTICIPANTE AO GRUPO
 void add_participant(Group *group, char *username, int pending)
 {
     Participant *p = malloc(sizeof(Participant));
@@ -77,7 +77,7 @@ void add_participant(Group *group, char *username, int pending)
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// DONE
+// SALVA O GRUPO NO ARQUIVO
 void save_group(Group *g)
 {
     FILE *f = fopen(FILE_GROUPS, "a");
@@ -102,7 +102,7 @@ void save_group(Group *g)
     fclose(f);
 }
 
-// DONE
+// ALTERA O STATUS DO PARTICIPANTE
 void change_participant_status(Group *group, char *username, int pending)
 {
     pthread_mutex_lock(&mutex_groups);
@@ -124,7 +124,7 @@ void change_participant_status(Group *group, char *username, int pending)
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// DONE
+// ADICIONA UM GRUPO NA LISTA A PARTIR DE UMA MENSAGEM NO TOPICO 'GROUPS'
 void add_group_by_message(char *message)
 {
     if (!message || strlen(message) == 0)
@@ -203,7 +203,7 @@ void add_group_by_message(char *message)
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// DO NOTHING
+// CRIA A MENSAGEM DO NOVO GRUPO CRIADO PARA O TOPICO 'GROUPS'
 void create_group_message()
 {
     char group_name[254];
@@ -231,7 +231,7 @@ void create_group_message()
     free(message);
 }
 
-// DONE ( GROUPS, USERS )
+// MENU PARA CRIAR UM NOVO GRUPO
 void create_group_menu()
 {
     printf("\nDigite o nome do grupo: ");
@@ -323,7 +323,7 @@ void create_group_menu()
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// DO NOTHING
+// CARREGA OS GRUPOS DO ARQUIVO
 void load_groups_from_file()
 {
     FILE *f = fopen(FILE_GROUPS, "r");
@@ -368,7 +368,7 @@ void load_groups_from_file()
     fclose(f);
 }
 
-// DONE
+// LISTA OS GRUPOS
 void list_groups()
 {
     if (groups == NULL)
@@ -405,7 +405,7 @@ void list_groups()
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// DO NOTHING
+// MONTA MENSAGEM DE PEDIDO DE ACESSO AO GRUPO
 void aks_to_join_group(Group *group)
 {
     char message[256];
@@ -416,7 +416,7 @@ void aks_to_join_group(Group *group)
     send_message(message, topic);
 }
 
-// DONE
+// MENU PARA PEDIR ACESSO AO GRUPO
 void join_group_menu()
 {
     printf("\nGrupos disponíveis para entrar:\n");
@@ -483,7 +483,7 @@ void join_group_menu()
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// DONE
+// ALTERA O STATUS DO PARTICIPANTE NO ARQUIVO E NA LISTA
 int toggle_participant_status_file(Group *group, char *username)
 {
     if (!group)
@@ -552,7 +552,7 @@ int toggle_participant_status_file(Group *group, char *username)
     return 0;
 }
 
-// DO NOTHING
+// ADICIONA PARTICIPANTE AO GRUPO NO ARQUIVO - RETORNA 1 SE O PARTICIPANTE FOI ADICIONADO
 int add_participant_to_group_file(char *group_name, char *username, Group *group, int pending)
 {
     FILE *in = fopen(FILE_GROUPS, "r");
@@ -621,7 +621,7 @@ int add_participant_to_group_file(char *group_name, char *username, Group *group
     return group_found;
 }
 
-// DONE
+// RETORNA O GRUPO POR INDICE
 Group *get_group_by_index(int index)
 {
     int count = 0;
@@ -644,7 +644,7 @@ Group *get_group_by_index(int index)
     return NULL;
 }
 
-// DONE
+// RETORNA O GRUPO POR NOME
 Group *get_group_by_name(char *group_name)
 {
     pthread_mutex_lock(&mutex_groups);
@@ -665,7 +665,7 @@ Group *get_group_by_name(char *group_name)
     return NULL;
 }
 
-// DONE
+// RETORNA O PARTICIPANTE DO GRUPO POR NOME
 Participant *get_participant_by_username(Group *group, char *username)
 {
     pthread_mutex_lock(&mutex_groups);

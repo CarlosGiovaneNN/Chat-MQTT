@@ -18,6 +18,7 @@ pthread_mutex_t mutex_users = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_mutex_t mutex_chats = PTHREAD_MUTEX_INITIALIZER;
 
+// INICIALIZA OS MUTEXES
 void init_mutexes()
 {
     pthread_mutexattr_t attr;
@@ -38,6 +39,7 @@ void init_mutexes()
     pthread_mutexattr_destroy(&attr);
 }
 
+// CRIA AS THREADS DO SHELL E DA PUBLICACAO DE STATUS
 int create_threads()
 {
     while (!is_connected())

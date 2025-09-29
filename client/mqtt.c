@@ -15,6 +15,7 @@ void on_subscribe_failure(void *context, MQTTAsync_failureData *response);
 
 int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *message);
 
+// MENSAGEM DE PERDA DE CONEXAO
 void connlost(void *context, char *cause)
 {
     MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer5;
@@ -37,6 +38,7 @@ void connlost(void *context, char *cause)
     }
 }
 
+// CONECTA O CLIENTE
 void on_connect(void *context, MQTTAsync_successData *response)
 {
     MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
@@ -68,21 +70,25 @@ void on_connect(void *context, MQTTAsync_successData *response)
     printf("Subscribed successfully\n");
 }
 
+// AO FALHAR A CONEXAO
 void on_connect_failure(void *context, MQTTAsync_failureData *response)
 {
     printf("Connect failed, rc %d\n", response->code);
 }
 
+// AO INSCREVER O CLIENTE
 void on_subscribe(void *context, MQTTAsync_successData *response)
 {
     // DO NOTHING
 }
 
+// AO FALHAR A INSCRICAO
 void on_subscribe_failure(void *context, MQTTAsync_failureData *response)
 {
     printf("Subscribe failed, rc %d\n", response->code);
 }
 
+// AO RECEBER UMA MENSAGEM
 int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *message)
 {
 

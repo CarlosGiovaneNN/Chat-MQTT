@@ -33,6 +33,7 @@ int send_message(char msg[], char topic[]);
 
 Messages *get_control_message(int index);
 
+// NAO ALTEREI AINDA
 void on_send(void *context, MQTTAsync_successData *response)
 {
     Send_Context *ctx = (Send_Context *)context;
@@ -44,6 +45,7 @@ void on_send(void *context, MQTTAsync_successData *response)
     free(ctx);
 }
 
+// NAO ALTEREI AINDA
 void on_send_failure(void *context, MQTTAsync_failureData *response)
 {
     Send_Context *ctx = (Send_Context *)context;
@@ -54,7 +56,7 @@ void on_send_failure(void *context, MQTTAsync_failureData *response)
     free(ctx);
 }
 
-// DONE
+// ADICIONA A MSG NO ARRAY - { ARRAY DE MENSAGENS, MUTEX DA ARRAY, MENSAGEM, TOPICO, NOME DO USUARIO, TIPO }
 void add_message(Messages **array, pthread_mutex_t *mtx, char payload[], char topic[], char from[], int type)
 {
     Messages *new_message = malloc(sizeof(Messages));
@@ -86,20 +88,20 @@ void add_message(Messages **array, pthread_mutex_t *mtx, char payload[], char to
     pthread_mutex_unlock(mtx);
 }
 
-// DONE
+// ADICIONA A MSG NO ARRAY DE MENSAGENS RECEBIDAS
 void add_all_received_message(char *payload, char topic[], char from[])
 {
     add_message(&all_received_messages, &mutex_all_received, payload, topic, from, MESSAGE_NORMAL);
 }
 
-// DONE
+// ADICIONA A MSG NO ARRAY DE MENSAGENS NAO LIDAS
 void add_unread_message(char *payload, char topic[], char from[])
 {
     add_message(&unread_messages, &mutex_unread, payload, topic, from, MESSAGE_NORMAL);
     add_all_received_message(payload, topic, from);
 }
 
-// DONE
+// ADICIONA A MSG NO ARRAY DE MENSAGENS DE CONTROLE
 void add_control_message(char topic[], char from[], char msg[], int type)
 {
     add_message(&control_messages, &mutex_control, msg, topic, from, type);
@@ -112,7 +114,7 @@ void clear_unread_messages()
     unread_messages = NULL;
 }
 
-// DONE
+// REMOVE A MSG NO ARRAY DE MENSAGENS DE CONTROLE
 void remove_control_message(int index)
 {
     pthread_mutex_lock(&mutex_control);
@@ -153,7 +155,17 @@ void remove_control_message(int index)
     pthread_mutex_unlock(&mutex_control);
 }
 
-// DO NOTHING
+/* DIVIDE A MENSAGEM EM 3 PARTES -
+{
+    MSG DIRETA DO TOPICO,
+    ENDERECO DO LOCAL PARA SALVAR:
+    [
+        NOME DO USUARIO,
+        DATA,
+        MENSAGEM
+    ]
+}
+*/
 void parse_message(const char *message, char *from, char *date, char *msg)
 {
     char buffer[200];
@@ -173,7 +185,7 @@ void parse_message(const char *message, char *from, char *date, char *msg)
         strcpy(msg, token);
 }
 
-// DONE
+// PRINTA AS MENSAGENS NO FORMATO CORRETO - { ARRAY DE MENSAGENS, MUTEX DA ARRAY }
 void print_messages(Messages *messages, pthread_mutex_t *mtx)
 {
     int count = 1;
@@ -202,16 +214,21 @@ void print_messages(Messages *messages, pthread_mutex_t *mtx)
     }
 }
 
-// DONE
+// PRINTA AS MENSAGENS RECEBIDAS
 void print_all_received_messages()
 {
     print_messages(all_received_messages, &mutex_all_received);
 }
 
-// DONE ( CONTROL - GROUPS )
+/*
+    LE OS PARICIPANTES DE CADA GRUPO E VERIFICA SE EXISTE MENSAGENS DE CONTROLE PENDENTES
+    MENSAGENS DE CONTROLE PENDENTES:
+    SERIA A MENSAGEM PERDIDA PELO USUARIO QUE DECIDIU NAO RESPONDER AO RECEBIMENTO
+*/
 void read_pending_messages_control()
 {
     pthread_mutex_lock(&mutex_groups);
+    pthread_mutex_lock(&mutex_control);
 
     Group *current_group = groups;
 
@@ -220,7 +237,6 @@ void read_pending_messages_control()
         Participant *p = get_participant_by_username(current_group, user_id);
         if (p && p->pending == 1)
         {
-            pthread_mutex_lock(&mutex_control);
 
             Messages *msg_node = get_control_message(0);
             int found = 0;
@@ -242,7 +258,6 @@ void read_pending_messages_control()
                 }
                 msg_node = msg_node->next;
             }
-            pthread_mutex_unlock(&mutex_control);
 
             if (!found)
             {
@@ -251,15 +266,17 @@ void read_pending_messages_control()
                 sprintf(new_msg, "Convidou voce para o grupo: %s", current_group->name);
                 add_control_message(current_group->name, user_id, new_msg, MESSAGE_GROUP_INVITATION);
             }
-        }
 
+        }
+        
         current_group = current_group->next;
     }
-
+    
+    pthread_mutex_unlock(&mutex_control);
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// DONE
+// LISTA MENSAGENS DE CONTROLE E PERGUNTA QUAL DESEJA RESPONDER
 void control_msg()
 {
     int count = 1;
@@ -370,7 +387,7 @@ void control_msg()
     pthread_mutex_unlock(&mutex_control);
 }
 
-// DONE (GROUPS)
+// AO RECEBER MENSAGEM DE QUALQUER TOPICO
 void on_recv_message(MQTTAsync_message *message, char *topic)
 {
     char from[100], date[100], msg[100];
@@ -531,7 +548,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     }
 }
 
-// DO NOTHING
+// FORMATA A MENSAGEM COM O FORMATO CORRETO { USUARIO - DD/MM/AAAA HH:MM:SS - MENSAGEM }
 char *format_message()
 {
 
@@ -552,7 +569,7 @@ char *format_message()
     return message;
 }
 
-// DO NOTHING
+// ENVIA A MENSAGEM
 int send_message(char msg[], char topic[])
 {
 
@@ -595,7 +612,7 @@ int send_message(char msg[], char topic[])
     return EXIT_SUCCESS;
 }
 
-// DONE
+// OBTEM A MENSAGEM DE CONTROLE PELO INDICE
 Messages *get_control_message(int index)
 {
     pthread_mutex_lock(&mutex_control);
