@@ -31,6 +31,11 @@
 #define GROUP_INVITATION_ACCEPTED 1
 #define GROUP_INVITATION_REJECTED 2
 
+// Files
+#define FILE_CHATS "chat/chat.txt"
+#define FILE_USERS "users/users.txt"
+#define FILE_GROUPS "groups/groups.txt"
+
 typedef struct Participant
 {
     char username[100];
@@ -90,5 +95,11 @@ typedef struct MenuItem
 } MenuItem;
 
 extern pthread_t thread_status, thread_shell;
+
+// MUTEXES
+extern pthread_mutex_t mutex_unread, mutex_all_received, mutex_control;
+extern pthread_mutex_t mutex_groups;
+extern pthread_mutex_t mutex_users;
+extern pthread_mutex_t mutex_chats;
 
 #endif

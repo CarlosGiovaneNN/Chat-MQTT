@@ -6,8 +6,6 @@
 
 Group *groups = NULL;
 
-char file_groups[] = "group/groups.txt";
-
 void create_group(char *group_name, char *leader);
 void add_participant(Group *group, char *username, int pending);
 void save_group(Group *g);
@@ -27,6 +25,7 @@ Group *get_group_by_name(char *group_name);
 
 Participant *get_participant_by_username(Group *group, char *username);
 
+// DONE
 void create_group(char *group_name, char *leader)
 {
     Group *new_group = malloc(sizeof(Group));
@@ -37,12 +36,18 @@ void create_group(char *group_name, char *leader)
     strcpy(new_group->name, group_name);
     strcpy(new_group->leader, leader);
     new_group->participants = NULL;
+
+    pthread_mutex_lock(&mutex_groups);
+
     new_group->next = groups;
     groups = new_group;
+
+    pthread_mutex_unlock(&mutex_groups);
 
     create_chat(group_name, 1);
 }
 
+// DONE
 void add_participant(Group *group, char *username, int pending)
 {
     Participant *p = malloc(sizeof(Participant));
@@ -52,6 +57,8 @@ void add_participant(Group *group, char *username, int pending)
     strcpy(p->username, username);
     p->pending = pending;
     p->next = NULL;
+
+    pthread_mutex_lock(&mutex_groups);
 
     if (!group->participants)
     {
@@ -66,40 +73,58 @@ void add_participant(Group *group, char *username, int pending)
         }
         current->next = p;
     }
+
+    pthread_mutex_unlock(&mutex_groups);
 }
 
+// DONE
 void save_group(Group *g)
 {
-    FILE *f = fopen(file_groups, "a");
+    FILE *f = fopen(FILE_GROUPS, "a");
     if (!f)
         return;
 
     fprintf(f, "Group: %s\n", g->name);
     fprintf(f, "Leader: %s\n", g->leader);
     fprintf(f, "Participants:\n");
+
+    pthread_mutex_lock(&mutex_groups);
+
     for (Participant *p = g->participants; p != NULL; p = p->next)
     {
         fprintf(f, "- %s (%s)\n", p->username, p->pending ? "pending" : "active");
     }
+
+    pthread_mutex_unlock(&mutex_groups);
+
     fprintf(f, "\n");
 
     fclose(f);
 }
 
+// DONE
 void change_participant_status(Group *group, char *username, int pending)
 {
+    pthread_mutex_lock(&mutex_groups);
+
     Participant *p = group->participants;
     while (p)
     {
         if (strcmp(p->username, username) == 0)
         {
             p->pending = pending;
+
+            pthread_mutex_unlock(&mutex_groups);
+
             return;
         }
         p = p->next;
     }
+
+    pthread_mutex_unlock(&mutex_groups);
 }
 
+// DONE
 void add_group_by_message(char *message)
 {
     if (!message || strlen(message) == 0)
@@ -108,6 +133,8 @@ void add_group_by_message(char *message)
     Group *group = malloc(sizeof(Group));
     if (!group)
         return;
+
+    pthread_mutex_lock(&mutex_groups);
     group->participants = NULL;
 
     char *ptr = strstr(message, "Group:<");
@@ -172,8 +199,11 @@ void add_group_by_message(char *message)
 
     group->next = groups;
     groups = group;
+
+    pthread_mutex_unlock(&mutex_groups);
 }
 
+// DO NOTHING
 void create_group_message()
 {
     char group_name[254];
@@ -201,12 +231,17 @@ void create_group_message()
     free(message);
 }
 
+// DONE ( GROUPS, USERS )
 void create_group_menu()
 {
     printf("\nDigite o nome do grupo: ");
+
     char group_name[100];
+
     if (!fgets(group_name, sizeof(group_name), stdin))
         return;
+
+    pthread_mutex_lock(&mutex_groups);
 
     group_name[strcspn(group_name, "\n")] = 0;
 
@@ -222,6 +257,8 @@ void create_group_menu()
         printf("Nenhum usuario encontrado\n\n\n");
         return;
     }
+
+    pthread_mutex_lock(&mutex_users);
 
     for (Users *current = users; current != NULL; current = current->next)
     {
@@ -281,11 +318,15 @@ void create_group_menu()
     printf("\nGrupo criado com sucesso!\n\n\n");
 
     create_group_message();
+
+    pthread_mutex_unlock(&mutex_users);
+    pthread_mutex_unlock(&mutex_groups);
 }
 
+// DO NOTHING
 void load_groups_from_file()
 {
-    FILE *f = fopen(file_groups, "r");
+    FILE *f = fopen(FILE_GROUPS, "r");
     if (!f)
         return;
 
@@ -327,6 +368,7 @@ void load_groups_from_file()
     fclose(f);
 }
 
+// DONE
 void list_groups()
 {
     if (groups == NULL)
@@ -336,6 +378,8 @@ void list_groups()
     }
 
     printf("Lista de grupos:\n\n");
+
+    pthread_mutex_lock(&mutex_groups);
 
     for (Group *g = groups; g != NULL; g = g->next)
     {
@@ -357,8 +401,11 @@ void list_groups()
 
         printf("\n");
     }
+
+    pthread_mutex_unlock(&mutex_groups);
 }
 
+// DO NOTHING
 void aks_to_join_group(Group *group)
 {
     char message[256];
@@ -369,10 +416,13 @@ void aks_to_join_group(Group *group)
     send_message(message, topic);
 }
 
+// DONE
 void join_group_menu()
 {
     printf("\nGrupos disponíveis para entrar:\n");
     printf("-------------------------------\n");
+
+    pthread_mutex_lock(&mutex_groups);
 
     int count = 1;
     Group *current_group = groups;
@@ -429,12 +479,17 @@ void join_group_menu()
     {
         aks_to_join_group(group);
     }
+
+    pthread_mutex_unlock(&mutex_groups);
 }
 
+// DONE
 int toggle_participant_status_file(Group *group, char *username)
 {
     if (!group)
         return 0;
+
+    pthread_mutex_lock(&mutex_groups);
 
     Participant *p = group->participants;
     while (p)
@@ -443,13 +498,19 @@ int toggle_participant_status_file(Group *group, char *username)
         {
             p->pending = !p->pending;
 
-            FILE *in = fopen(file_groups, "r");
+            FILE *in = fopen(FILE_GROUPS, "r");
             if (!in)
+            {
+                pthread_mutex_unlock(&mutex_groups);
+
                 return 0;
+            }
 
             FILE *out = fopen("tmp.txt", "w");
             if (!out)
             {
+                pthread_mutex_unlock(&mutex_groups);
+
                 fclose(in);
                 return 0;
             }
@@ -478,20 +539,23 @@ int toggle_participant_status_file(Group *group, char *username)
             fclose(in);
             fclose(out);
 
-            remove(file_groups);
-            rename("tmp.txt", file_groups);
+            remove(FILE_GROUPS);
+            rename("tmp.txt", FILE_GROUPS);
 
             return 1;
         }
         p = p->next;
     }
 
+    pthread_mutex_unlock(&mutex_groups);
+
     return 0;
 }
 
+// DO NOTHING
 int add_participant_to_group_file(char *group_name, char *username, Group *group, int pending)
 {
-    FILE *in = fopen(file_groups, "r");
+    FILE *in = fopen(FILE_GROUPS, "r");
     if (!in)
     {
         perror("Erro ao abrir group.txt");
@@ -551,47 +615,74 @@ int add_participant_to_group_file(char *group_name, char *username, Group *group
 
     add_participant(group, username, pending);
 
-    remove(file_groups);
-    rename("tmp.txt", file_groups);
+    remove(FILE_GROUPS);
+    rename("tmp.txt", FILE_GROUPS);
 
     return group_found;
 }
 
+// DONE
 Group *get_group_by_index(int index)
 {
     int count = 0;
+
+    pthread_mutex_lock(&mutex_groups);
+
     for (Group *current = groups; current != NULL; current = current->next)
     {
         if (count == index)
+        {
+            pthread_mutex_unlock(&mutex_groups);
+
             return current;
+        }
         count++;
     }
+
+    pthread_mutex_unlock(&mutex_groups);
+
     return NULL;
 }
 
+// DONE
 Group *get_group_by_name(char *group_name)
 {
+    pthread_mutex_lock(&mutex_groups);
+
     for (Group *g = groups; g != NULL; g = g->next)
     {
         if (strcmp(g->name, group_name) == 0)
         {
+
+            pthread_mutex_unlock(&mutex_groups);
+
             return g;
         }
     }
 
+    pthread_mutex_unlock(&mutex_groups);
+
     return NULL;
 }
 
+// DONE
 Participant *get_participant_by_username(Group *group, char *username)
 {
+    pthread_mutex_lock(&mutex_groups);
+
     Participant *p = group->participants;
     while (p != NULL)
     {
         if (strcmp(p->username, username) == 0)
         {
+            pthread_mutex_unlock(&mutex_groups);
+
             return p;
         }
         p = p->next;
     }
+
+    pthread_mutex_unlock(&mutex_groups);
+
     return NULL;
 }

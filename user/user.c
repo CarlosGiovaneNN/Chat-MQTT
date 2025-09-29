@@ -2,7 +2,6 @@
 
 Users *users = NULL;
 char user_id[100] = "";
-char file_users[] = "user/users.txt";
 
 void remove_substring(char *str, char *sub);
 void print_users();
@@ -20,6 +19,7 @@ int check_status(char *msg);
 
 Users *get_user_by_index(int index);
 
+// DO NOTHING
 void remove_substring(char *str, char *sub)
 {
     char *pos, *temp;
@@ -32,8 +32,11 @@ void remove_substring(char *str, char *sub)
     }
 }
 
+// DONE
 void print_users()
 {
+    pthread_mutex_lock(&mutex_users);
+
     Users *current = users;
 
     while (current != NULL)
@@ -42,11 +45,14 @@ void print_users()
         printf("%d\n", current->online);
         current = current->next;
     }
+
+    pthread_mutex_unlock(&mutex_users);
 }
 
+// DO NOTHING
 void load_users_from_file()
 {
-    FILE *f = fopen(file_users, "r");
+    FILE *f = fopen(FILE_USERS, "r");
     if (!f)
         return;
 
@@ -65,12 +71,13 @@ void load_users_from_file()
     fclose(f);
 }
 
+// DO NOTHING
 void save_user_to_file(char *username)
 {
     if (user_exists_in_file(username))
         return;
 
-    FILE *f = fopen(file_users, "a");
+    FILE *f = fopen(FILE_USERS, "a");
     if (!f)
         return;
 
@@ -78,6 +85,7 @@ void save_user_to_file(char *username)
     fclose(f);
 }
 
+// DONE
 void add_user(char username[])
 {
     int status = 0;
@@ -94,14 +102,22 @@ void add_user(char username[])
 
     strcpy(new_user->username, username);
     new_user->online = status;
+
+    pthread_mutex_lock(&mutex_users);
+
     new_user->next = users;
     users = new_user;
+
+    pthread_mutex_unlock(&mutex_users);
 
     save_user_to_file(username);
 }
 
+// DONE
 void change_status(char username[], int status)
 {
+    pthread_mutex_lock(&mutex_users);
+
     Users *current = users;
 
     while (current != NULL)
@@ -109,14 +125,22 @@ void change_status(char username[], int status)
         if (strcmp(current->username, username) == 0)
         {
             current->online = status;
+
+            pthread_mutex_unlock(&mutex_users);
+
             return;
         }
         current = current->next;
     }
+
+    pthread_mutex_unlock(&mutex_users);
 }
 
+// DONE
 void list_users()
 {
+    pthread_mutex_lock(&mutex_users);
+
     Users *current = users;
 
     printf("Lista de usuarios: \n");
@@ -124,6 +148,9 @@ void list_users()
     if (current == NULL)
     {
         printf("Nenhum usuario conectado\n\n");
+
+        pthread_mutex_unlock(&mutex_users);
+
         return;
     }
 
@@ -133,17 +160,23 @@ void list_users()
         current = current->next;
     }
 
+    pthread_mutex_unlock(&mutex_users);
+
     printf("\n");
 }
 
+// DO NOTHING
 void update_user_id(char id[])
 {
     strncpy(user_id, id, sizeof(user_id) - 1);
     user_id[sizeof(user_id) - 1] = '\0';
 }
 
+// DONE
 int user_count()
 {
+    pthread_mutex_lock(&mutex_users);
+
     Users *current = users;
     int count = 0;
     while (current != NULL)
@@ -151,9 +184,13 @@ int user_count()
         count++;
         current = current->next;
     }
+
+    pthread_mutex_unlock(&mutex_users);
+
     return count;
 }
 
+// DO NOTHING
 int check_status(char *msg)
 {
     if (strstr(msg, "disconnected") != NULL)
@@ -167,9 +204,10 @@ int check_status(char *msg)
     return -1; // nenhum dos dois
 }
 
+// DO NOTHING
 int user_exists_in_file(char *username)
 {
-    FILE *f = fopen(file_users, "r");
+    FILE *f = fopen(FILE_USERS, "r");
     if (!f)
         return 0;
 
@@ -188,32 +226,47 @@ int user_exists_in_file(char *username)
     return 0;
 }
 
+// DONE
 int find_user(char username[])
 {
+    pthread_mutex_lock(&mutex_users);
+
     Users *current = users;
 
     while (current != NULL)
     {
         if (strcmp(current->username, username) == 0)
         {
+            pthread_mutex_unlock(&mutex_users);
             return 1;
         }
         current = current->next;
     }
 
+    pthread_mutex_unlock(&mutex_users);
+
     return 0;
 }
 
+// DONE
 Users *get_user_by_index(int index)
 {
     int count = 0;
+
+    pthread_mutex_lock(&mutex_users);
+
     for (Users *current = users; current != NULL; current = current->next)
     {
         if (count == index)
         {
+            pthread_mutex_unlock(&mutex_users);
+
             return current;
         }
         count++;
     }
+
+    pthread_mutex_unlock(&mutex_users);
+
     return NULL;
 }

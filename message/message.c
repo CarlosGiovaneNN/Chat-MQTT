@@ -14,14 +14,14 @@ Messages *control_messages = NULL;
 void on_send(void *context, MQTTAsync_successData *response);
 void on_send_failure(void *context, MQTTAsync_failureData *response);
 
-void add_message(Messages **array, char payload[], char topic[], char from[], int type);
+void add_message(Messages **array, pthread_mutex_t *mtx, char payload[], char topic[], char from[], int type);
 void add_all_received_message(char *payload, char topic[], char from[]);
 void add_unread_message(char *payload, char topic[], char from[]);
 void add_control_message(char topic[], char from[], char msg[], int type);
 void clear_unread_messages();
 void remove_control_message(int index);
 void parse_message(const char *message, char *from, char *date, char *msg);
-void print_messages(Messages *messages);
+void print_messages(Messages *messages, pthread_mutex_t *mtx);
 void print_all_received_messages();
 void read_pending_messages_control();
 void control_msg();
@@ -54,7 +54,8 @@ void on_send_failure(void *context, MQTTAsync_failureData *response)
     free(ctx);
 }
 
-void add_message(Messages **array, char payload[], char topic[], char from[], int type)
+// DONE
+void add_message(Messages **array, pthread_mutex_t *mtx, char payload[], char topic[], char from[], int type)
 {
     Messages *new_message = malloc(sizeof(Messages));
     if (!new_message)
@@ -65,6 +66,8 @@ void add_message(Messages **array, char payload[], char topic[], char from[], in
     strcpy(new_message->from, from);
     new_message->next = NULL;
     new_message->type = type;
+
+    pthread_mutex_lock(mtx);
 
     if (*array == NULL)
     {
@@ -79,22 +82,27 @@ void add_message(Messages **array, char payload[], char topic[], char from[], in
         }
         current->next = new_message;
     }
+
+    pthread_mutex_unlock(mtx);
 }
 
+// DONE
 void add_all_received_message(char *payload, char topic[], char from[])
 {
-    add_message(&all_received_messages, payload, topic, from, MESSAGE_NORMAL);
+    add_message(&all_received_messages, &mutex_all_received, payload, topic, from, MESSAGE_NORMAL);
 }
 
+// DONE
 void add_unread_message(char *payload, char topic[], char from[])
 {
-    add_message(&unread_messages, payload, topic, from, MESSAGE_NORMAL);
+    add_message(&unread_messages, &mutex_unread, payload, topic, from, MESSAGE_NORMAL);
     add_all_received_message(payload, topic, from);
 }
 
+// DONE
 void add_control_message(char topic[], char from[], char msg[], int type)
 {
-    add_message(&control_messages, msg, topic, from, type);
+    add_message(&control_messages, &mutex_control, msg, topic, from, type);
 }
 
 // TO DO
@@ -104,32 +112,48 @@ void clear_unread_messages()
     unread_messages = NULL;
 }
 
+// DONE
 void remove_control_message(int index)
 {
-    int count = 1;
+    pthread_mutex_lock(&mutex_control);
 
-    if (index > 0)
+    if (control_messages == NULL)
     {
-        for (Messages *message = control_messages; message != NULL; message = message->next)
-        {
-            if (count == index)
-            {
-                Messages *aux = message->next;
-                message->next = message->next->next;
-                free(aux);
-                return;
-            }
-            count++;
-        }
+        pthread_mutex_unlock(&mutex_control);
+        return;
     }
-    else if (index == 0)
+
+    if (index == 0)
     {
         Messages *aux = control_messages;
         control_messages = control_messages->next;
         free(aux);
+        pthread_mutex_unlock(&mutex_control);
+        return;
     }
+
+    int count = 0;
+    Messages *prev = NULL;
+    Messages *cur = control_messages;
+    while (cur)
+    {
+        if (count == index)
+        {
+            if (prev)
+                prev->next = cur->next;
+            free(cur);
+            pthread_mutex_unlock(&mutex_control);
+            return;
+        }
+        prev = cur;
+        cur = cur->next;
+        count++;
+    }
+
+    pthread_mutex_unlock(&mutex_control);
 }
 
+// DO NOTHING
 void parse_message(const char *message, char *from, char *date, char *msg)
 {
     char buffer[200];
@@ -149,9 +173,12 @@ void parse_message(const char *message, char *from, char *date, char *msg)
         strcpy(msg, token);
 }
 
-void print_messages(Messages *messages)
+// DONE
+void print_messages(Messages *messages, pthread_mutex_t *mtx)
 {
     int count = 1;
+
+    pthread_mutex_lock(mtx);
 
     for (Messages *message = messages; message != NULL; message = message->next)
     {
@@ -167,19 +194,25 @@ void print_messages(Messages *messages)
         count++;
     }
 
+    pthread_mutex_unlock(mtx);
+
     if (count == 1)
     {
         printf("Nenhuma mensagem para exibir.\n");
     }
 }
 
+// DONE
 void print_all_received_messages()
 {
-    print_messages(all_received_messages);
+    print_messages(all_received_messages, &mutex_all_received);
 }
 
+// DONE ( CONTROL - GROUPS )
 void read_pending_messages_control()
 {
+    pthread_mutex_lock(&mutex_groups);
+
     Group *current_group = groups;
 
     while (current_group != NULL)
@@ -187,6 +220,8 @@ void read_pending_messages_control()
         Participant *p = get_participant_by_username(current_group, user_id);
         if (p && p->pending == 1)
         {
+            pthread_mutex_lock(&mutex_control);
+
             Messages *msg_node = get_control_message(0);
             int found = 0;
 
@@ -207,6 +242,7 @@ void read_pending_messages_control()
                 }
                 msg_node = msg_node->next;
             }
+            pthread_mutex_unlock(&mutex_control);
 
             if (!found)
             {
@@ -219,12 +255,17 @@ void read_pending_messages_control()
 
         current_group = current_group->next;
     }
+
+    pthread_mutex_unlock(&mutex_groups);
 }
 
+// DONE
 void control_msg()
 {
     int count = 1;
     printf("\n");
+
+    pthread_mutex_lock(&mutex_control);
 
     for (Messages *message = control_messages; message != NULL; message = message->next)
     {
@@ -280,8 +321,6 @@ void control_msg()
 
             create_chat(group_name, 1);
 
-            remove_control_message(index);
-
             if (!toggle_participant_status_file(get_group_by_name(group_name), user_id))
             {
                 printf("Erro ao alterar status no arquivo de grupos\n");
@@ -294,8 +333,6 @@ void control_msg()
             sprintf(topic, "%s_CONTROL", msg->from);
 
             send_message(message, topic);
-
-            remove_control_message(index);
         }
         else if (msg->type == MESSAGE_GROUP_ASK_TO_JOIN)
         {
@@ -309,8 +346,6 @@ void control_msg()
             {
                 printf("Erro ao adicionar participante no arquivo de grupos\n");
             }
-
-            remove_control_message(index);
         }
     }
     else
@@ -328,10 +363,14 @@ void control_msg()
 
             send_message(message, topic);
         }
-        remove_control_message(index);
     }
+
+    remove_control_message(index);
+
+    pthread_mutex_unlock(&mutex_control);
 }
 
+// DONE (GROUPS)
 void on_recv_message(MQTTAsync_message *message, char *topic)
 {
     char from[100], date[100], msg[100];
@@ -395,6 +434,8 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
                 add_unread_message(new_msg, topic, from);
 
+                pthread_mutex_lock(&mutex_groups);
+
                 Group *group = get_group_by_name(group_name);
 
                 if (get_participant_by_username(group, from) == NULL)
@@ -406,6 +447,8 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
                 {
                     change_participant_status(group, from, 0);
                 }
+
+                pthread_mutex_unlock(&mutex_groups);
             }
             else if (option == GROUP_INVITATION_REJECTED)
             {
@@ -488,6 +531,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     }
 }
 
+// DO NOTHING
 char *format_message()
 {
 
@@ -508,6 +552,7 @@ char *format_message()
     return message;
 }
 
+// DO NOTHING
 int send_message(char msg[], char topic[])
 {
 
@@ -550,14 +595,24 @@ int send_message(char msg[], char topic[])
     return EXIT_SUCCESS;
 }
 
+// DONE
 Messages *get_control_message(int index)
 {
+    pthread_mutex_lock(&mutex_control);
+
     int count = 0;
+
     for (Messages *message = control_messages; message != NULL; message = message->next)
     {
         if (count == index)
+        {
+            pthread_mutex_unlock(&mutex_control);
             return message;
+        }
         count++;
     }
+
+    pthread_mutex_unlock(&mutex_control);
+
     return NULL;
 }

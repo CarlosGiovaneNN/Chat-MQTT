@@ -3,6 +3,8 @@
 
 #include <pthread.h>
 
+void init_mutexes();
+
 int create_threads();
 
 #endif

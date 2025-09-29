@@ -6,8 +6,6 @@
 
 Chat *chats = NULL;
 
-char file_chats[] = "chat/chat.txt";
-
 void add_chat_by_message(char *message, char *from);
 void load_chats_by_groups();
 void load_chats_from_file();
@@ -18,6 +16,7 @@ char *create_chat(char *name, int is_group);
 Chat *find_chat(char *name, int is_group);
 Chat *find_chat_by_to_and_type(const char *to, int is_group);
 
+// DONE
 void add_chat_by_message(char *message, char *from)
 {
     Chat *chat = malloc(sizeof(Chat));
@@ -29,12 +28,21 @@ void add_chat_by_message(char *message, char *from)
 
     chat->is_group = 0;
     chat->participants = NULL;
+
+    pthread_mutex_lock(&mutex_chats);
+
     chat->next = chats;
     chats = chat;
+
+    pthread_mutex_unlock(&mutex_chats);
 }
 
+// DONE
 void load_chats_by_groups()
 {
+    pthread_mutex_lock(&mutex_groups);
+    pthread_mutex_lock(&mutex_chats);
+
     Group *group = groups;
     while (group != NULL)
     {
@@ -97,16 +105,22 @@ void load_chats_by_groups()
 
         group = group->next;
     }
+
+    pthread_mutex_unlock(&mutex_chats);
+    pthread_mutex_unlock(&mutex_groups);
 }
 
+// DONE
 void load_chats_from_file()
 {
-    FILE *file = fopen(file_chats, "r");
+    FILE *file = fopen(FILE_CHATS, "r");
     if (!file)
     {
         perror("Erro ao abrir chat/chat.txt");
         return;
     }
+
+    pthread_mutex_lock(&mutex_chats);
 
     char line[512];
     while (fgets(line, sizeof(line), file))
@@ -151,9 +165,12 @@ void load_chats_from_file()
 
     fclose(file);
 
+    pthread_mutex_unlock(&mutex_chats);
+
     load_chats_by_groups();
 }
 
+// DONE
 void show_chat_menu()
 {
     MenuItem items[256];
@@ -162,6 +179,10 @@ void show_chat_menu()
     printf("\n================ Conversas Disponíveis ================\n\n");
 
     printf("[Conversas ativas]\n");
+
+    pthread_mutex_lock(&mutex_users);
+    pthread_mutex_lock(&mutex_groups);
+
     Users *current_user = users;
     while (current_user != NULL)
     {
@@ -241,8 +262,12 @@ void show_chat_menu()
         Group *g = (Group *)selected.ptr;
         printf("Você entrou no grupo: %s\n", g->name);
     }
+
+    pthread_mutex_unlock(&mutex_users);
+    pthread_mutex_unlock(&mutex_groups);
 }
 
+// DONE
 char *create_chat(char *name, int is_group)
 {
     if (!name || strlen(name) == 0)
@@ -256,11 +281,17 @@ char *create_chat(char *name, int is_group)
     chat->to[sizeof(chat->to) - 1] = '\0';
 
     chat->is_group = is_group;
+
+    pthread_mutex_lock(&mutex_chats);
+
     chat->next = chats;
     chats = chat;
 
     if (is_group)
     {
+
+        pthread_mutex_lock(&mutex_groups);
+
         Group *g = get_group_by_name(name);
         if (g)
         {
@@ -271,13 +302,15 @@ char *create_chat(char *name, int is_group)
             chat->participants = NULL;
         }
 
+        pthread_mutex_unlock(&mutex_groups);
+
         strcpy(chat->topic, name);
     }
     else
     {
         chat->participants = NULL;
 
-        FILE *file = fopen(file_chats, "a");
+        FILE *file = fopen(FILE_CHATS, "a");
         if (!file)
             return NULL;
 
@@ -293,29 +326,51 @@ char *create_chat(char *name, int is_group)
         sprintf(chat->topic, "%s_%s_%s", user_id, name, timestamp);
     }
 
+    pthread_mutex_unlock(&mutex_chats);
+
     return chat->topic;
 }
 
+// DONE
 Chat *find_chat(char *name, int is_group)
 {
+    pthread_mutex_lock(&mutex_chats);
+
     Chat *c = chats;
     while (c)
     {
         if (c->is_group == is_group && strcmp(c->to, name) == 0)
+        {
+            pthread_mutex_unlock(&mutex_chats);
+
             return c;
+        }
         c = c->next;
     }
+
+    pthread_mutex_unlock(&mutex_chats);
+
     return NULL;
 }
 
+// DONE
 Chat *find_chat_by_to_and_type(const char *to, int is_group)
 {
+    pthread_mutex_lock(&mutex_chats);
+
     Chat *c = chats;
     while (c)
     {
         if (c->is_group == is_group && strcmp(c->to, to) == 0)
+        {
+            pthread_mutex_unlock(&mutex_chats);
+
             return c;
+        }
         c = c->next;
     }
+
+    pthread_mutex_unlock(&mutex_chats);
+
     return NULL;
 }

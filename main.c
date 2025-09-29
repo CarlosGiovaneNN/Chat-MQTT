@@ -16,6 +16,8 @@ int main(int argc, char *argv[])
 
     update_user_id(argv[1]);
 
+    init_mutexes();
+
     load_users_from_file();
     load_groups_from_file();
     load_chats_from_file();
