@@ -3,7 +3,7 @@
 
 #include "MQTTAsync.h"
 
-void print_all_received_messages();
+void print_unread_messages();
 
 void on_recv_message(MQTTAsync_message *message, char *topic);
 

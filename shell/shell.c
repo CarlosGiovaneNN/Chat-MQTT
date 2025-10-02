@@ -37,7 +37,7 @@ void *run_shell(void *arg)
         }
         else if (strcmp(buffer, "3") == 0)
         {
-            print_all_received_messages();
+            print_unread_messages();
         }
         else if (strcmp(buffer, "4") == 0)
         {

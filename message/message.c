@@ -24,6 +24,7 @@ void remove_control_message(int index);
 void parse_message(char *message, char *from, char *date, char *msg);
 void print_messages(Messages *messages, pthread_mutex_t *mtx);
 void print_all_received_messages();
+void print_unread_messages();
 void read_pending_messages_control();
 void control_msg();
 void on_recv_message(MQTTAsync_message *message, char *topic);
@@ -193,36 +194,36 @@ void parse_message(char *message, char *from, char *date, char *msg)
 // PRINTA AS MENSAGENS NO FORMATO CORRETO - { ARRAY DE MENSAGENS, MUTEX DA ARRAY }
 void print_messages(Messages *messages, pthread_mutex_t *mtx)
 {
-    int count = 1;
-
     pthread_mutex_lock(mtx);
 
     for (Messages *message = messages; message != NULL; message = message->next)
     {
         printf("====================================\n");
-        printf("Mensagem %d\n", count);
-        printf("------------------------------------\n");
         printf("De:    %s\n", message->from);
         printf("Tópico: %s\n", message->topic);
         printf("------------------------------------\n");
         printf("%s\n", message->payload);
         printf("====================================\n\n");
-
-        count++;
     }
 
-    pthread_mutex_unlock(mtx);
-
-    if (count == 1)
+    if (messages == NULL)
     {
         printf("Nenhuma mensagem para exibir.\n");
     }
+
+    pthread_mutex_unlock(mtx);
 }
 
 // PRINTA AS MENSAGENS RECEBIDAS
 void print_all_received_messages()
 {
     print_messages(all_received_messages, &mutex_all_received);
+}
+
+// PRINTA AS MENSAGENS NAO LIDAS
+void print_unread_messages()
+{
+    print_messages(unread_messages, &mutex_unread);
 }
 
 /*
