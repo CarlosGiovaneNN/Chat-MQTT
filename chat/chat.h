@@ -8,6 +8,8 @@ void show_message_from_other(char *from, char *date, char *msg);
 void subscribe_all_chats();
 void show_chat_topbar(char *topic);
 
+int add_private_chat(char *name, char *topic);
+
 char *create_chat(char *name, int is_group);
 
 extern char selected_chat[100];

@@ -454,14 +454,14 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
         if (strcmp(user_id, from) == 0)
         {
-            //printf("retornou\n");
+            // printf("retornou\n");
             return;
         }
 
         // printf("ENTROU NO GROUPS\n");
         if (strncmp(msg, "Group:", 6) == 0)
         {
-            //printf("ENTROU NO GROUP CREATE\n");
+            // printf("ENTROU NO GROUP CREATE\n");
             add_group_by_message(msg);
         }
         else
@@ -472,8 +472,8 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
             sscanf(msg, "%d;", &option);
 
-            //printf("%s\n", (char *)message->payload);
-            //printf("%d\n", option);
+            // printf("%s\n", (char *)message->payload);
+            // printf("%d\n", option);
 
             if (option == GROUP_INVITATION_ACCEPTED)
             {
@@ -482,22 +482,22 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
                 add_unread_message(new_msg, topic, from, date);
 
-                //printf("ENTROU NO ADD UNREAD MESSAGE\n");
+                // printf("ENTROU NO ADD UNREAD MESSAGE\n");
 
                 pthread_mutex_lock(&mutex_groups);
 
-                //printf("ENTROU NO MUTEX GROUPS\n");
+                // printf("ENTROU NO MUTEX GROUPS\n");
 
                 Group *group = get_group_by_name(group_name);
 
                 if (get_participant_by_username(group, from) == NULL)
                 {
-                    //printf("ENTROU NO ADD PARTICIPANT\n");
+                    // printf("ENTROU NO ADD PARTICIPANT\n");
                     add_participant(group, from, 0);
                 }
                 else
                 {
-                    //printf("ENTROU NO CHANGE PARTICIPANT STATUS\n");
+                    // printf("ENTROU NO CHANGE PARTICIPANT STATUS\n");
                     change_participant_status(group, from, 0);
                 }
 
@@ -526,6 +526,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
         sscanf(msg, "%d;", &option);
 
+        printf("%d\n", option);
         if (option == IDCONTROL_GROUP_INVITATION)
         {
             char group_name[100];
@@ -550,9 +551,11 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
             strcpy(new_chat, create_chat(from, 0));
 
+            sprintf(new_msg, "%d;%s;", IDCONTROL_ADD_PRIVATE_CHAT, new_chat);
+
             sprintf(topic, "%s_CONTROL", from);
 
-            send_message(new_chat, topic);
+            send_message(new_msg, topic);
         }
         else if (option == IDCONTROL_CHAT_INVITATION_REJECTED)
         {
@@ -567,10 +570,15 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
             add_control_message(topic, from, "Pede permissao para entrar no grupo", MESSAGE_GROUP_ASK_TO_JOIN, date);
         }
-        else
+        else if (option == IDCONTROL_ADD_PRIVATE_CHAT)
         {
+            printf("ENTROU NO ELSE\n");
+            char new_private_chat_topic[128];
 
-            printf("%s", (char *)message->payload);
+            sscanf(msg, "%s#", new_private_chat_topic);
+
+            add_private_chat(from, new_private_chat_topic);
+            // printf("%s", (char *)message->payload);
         }
     }
     else
@@ -682,8 +690,8 @@ int send_message(char msg[], char topic[])
     opts.onFailure = on_send_failure;
     opts.context = ctx;
 
-    //if (strcmp(topic, "USERS") != 0)
-    //    printf("%s\n", payload);
+    // if (strcmp(topic, "USERS") != 0)
+    //     printf("%s\n", payload);
 
     if ((rc = MQTTAsync_sendMessage(client, topic, &pubmsg, &opts)) != MQTTASYNC_SUCCESS)
     {

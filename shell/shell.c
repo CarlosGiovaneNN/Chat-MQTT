@@ -9,7 +9,7 @@
 
 void *run_shell(void *arg)
 {
-    ystem("clear");
+    //system("clear");
 
     while (is_connected())
     {
@@ -30,7 +30,7 @@ void *run_shell(void *arg)
 
         buffer[strcspn(buffer, "\n")] = '\0';
 
-        system("clear");
+        //system("clear");
 
         if (strcmp(buffer, "1") == 0)
         {

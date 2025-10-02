@@ -22,6 +22,8 @@ void show_message_from_other(char *from, char *date, char *msg);
 void load_messages(char *topic);
 void subscribe_all_chats();
 
+int add_private_chat(char *name, char *topic);
+
 char *create_chat(char *name, int is_group);
 
 Chat *find_chat(char *name, int is_group);
@@ -243,19 +245,27 @@ void show_chat_menu()
     MenuItem selected = items[choice];
     if (selected.type == ITEM_USER)
     {
+        printf("%d\n", 1);
         Users *u = (Users *)selected.ptr;
 
         if (find_chat(u->username, 0) == NULL)
         {
+            printf("%d\n", 2);
             char new_message[256];
             char topic[256];
             sprintf(new_message, "%d;", IDCONTROL_CHAT_INVITATION);
             sprintf(topic, "%s_CONTROL", u->username);
             send_message(new_message, topic);
             printf("Pedido para iniciar chat enviado para %s\n", u->username);
+
+            pthread_mutex_unlock(&mutex_users);
+            pthread_mutex_unlock(&mutex_groups);
+
+            return;
         }
         else
         {
+            printf("%d\n", 3);
             printf("Você entrou no chat privado com: %s\n", u->username);
 
             strcpy(selected_chat, find_chat(u->username, 0)->topic);
@@ -279,11 +289,11 @@ void show_chat_menu()
 void load_chat()
 {
 
-    system("clear");
+    // system("clear");
 
     char buffer[256];
 
-    //printf("%s", selected_chat);
+    // printf("%s", selected_chat);
 
     while (1)
     {
@@ -455,6 +465,44 @@ void subscribe_all_chats()
     pthread_mutex_unlock(&mutex_chats);
 }
 
+// ADICIONA UM CHAT PRIVADO
+int add_private_chat(char *name, char *topic)
+{
+    pthread_mutex_lock(&mutex_chats);
+
+    Chat *chat = find_chat_by_topic(topic);
+
+    if (!chat)
+    {
+
+        chat = malloc(sizeof(Chat));
+        if (!chat)
+        {
+            pthread_mutex_unlock(&mutex_chats);
+            return 0;
+        }
+
+        strncpy(chat->topic, topic, sizeof(chat->topic) - 1);
+        chat->topic[sizeof(chat->topic) - 1] = '\0';
+
+        chat->is_group = 0;
+
+        strcpy(chat->to, name);
+
+        chat->participants = NULL;
+
+        chat->next = chats;
+
+        chats = chat;
+
+        pthread_mutex_unlock(&mutex_chats);
+        return 1;
+    }
+
+    pthread_mutex_unlock(&mutex_chats);
+
+    return 0;
+}
 // CRIA UM NOVO CHAT
 char *create_chat(char *name, int is_group)
 {
