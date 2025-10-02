@@ -255,6 +255,9 @@ void create_group_menu()
     if (users == NULL)
     {
         printf("Nenhum usuario encontrado\n\n\n");
+
+        pthread_mutex_unlock(&mutex_groups);
+
         return;
     }
 
@@ -268,7 +271,12 @@ void create_group_menu()
 
     char line[256];
     if (!fgets(line, sizeof(line), stdin))
+    {
+        pthread_mutex_unlock(&mutex_groups);
+        pthread_mutex_unlock(&mutex_users);
+
         return;
+    }
 
     line[strcspn(line, "\n")] = 0;
 
@@ -281,6 +289,9 @@ void create_group_menu()
 
         if (index < 0 || index >= participant_number)
         {
+            pthread_mutex_unlock(&mutex_groups);
+            pthread_mutex_unlock(&mutex_users);
+
             printf("Indice invalido\n");
             return;
         }
@@ -294,7 +305,12 @@ void create_group_menu()
             Group *new_group = get_group_by_index(0);
 
             if (!new_group)
+            {
+                pthread_mutex_unlock(&mutex_groups);
+                pthread_mutex_unlock(&mutex_users);
+
                 return;
+            }
 
             add_participant(new_group, participant->username, 1);
 
@@ -469,7 +485,11 @@ void join_group_menu()
     fgets(buffer, sizeof(buffer), stdin);
 
     if (buffer[0] == '0')
+    {
+        pthread_mutex_unlock(&mutex_groups);
+
         return;
+    }
 
     int index = atoi(buffer) - 1;
 
@@ -557,6 +577,8 @@ int toggle_participant_status_file(Group *group, char *username)
 
             remove(FILE_GROUPS);
             rename("tmp.txt", FILE_GROUPS);
+
+            pthread_mutex_unlock(&mutex_groups);
 
             return 1;
         }

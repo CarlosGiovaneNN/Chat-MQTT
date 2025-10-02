@@ -5,8 +5,6 @@
 #include "../group/group.h"
 #include "../user/user.h"
 
-volatile int deliveredtoken = 0;
-
 Messages *unread_messages = NULL;
 Messages *all_received_messages = NULL;
 Messages *control_messages = NULL;
@@ -44,7 +42,6 @@ void on_send(void *context, MQTTAsync_successData *response)
     if (strcmp(ctx->topic, "USERS") != 0)
         printf("Message delivered successfully\n");
 
-    deliveredtoken = 1;
     free(ctx);
 }
 
@@ -55,7 +52,6 @@ void on_send_failure(void *context, MQTTAsync_failureData *response)
 
     printf("Failed to deliver message, rc %d\n", response->code);
 
-    deliveredtoken = 1;
     free(ctx);
 }
 
@@ -426,10 +422,10 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     // printf("%s\n", topic);
     // printf("%d\n", strcmp(topic, id_control));
 
-    // if (strcmp(topic, "USERS") != 0) // dps remover
-    // {
-    //     printf("%s\n", (char *)message->payload);
-    // }
+    if (strcmp(topic, "USERS") != 0) // dps remover
+    {
+        printf("%s\n", (char *)message->payload);
+    }
 
     if (strcmp(topic, "USERS") == 0)
     {
@@ -457,12 +453,15 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     {
 
         if (strcmp(user_id, from) == 0)
+        {
+            //printf("retornou\n");
             return;
+        }
 
         // printf("ENTROU NO GROUPS\n");
         if (strncmp(msg, "Group:", 6) == 0)
         {
-            // printf("ENTROU NO GROUP CREATE\n");
+            //printf("ENTROU NO GROUP CREATE\n");
             add_group_by_message(msg);
         }
         else
@@ -473,7 +472,8 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
             sscanf(msg, "%d;", &option);
 
-            printf("%s\n", (char *)message->payload);
+            //printf("%s\n", (char *)message->payload);
+            //printf("%d\n", option);
 
             if (option == GROUP_INVITATION_ACCEPTED)
             {
@@ -482,18 +482,22 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
                 add_unread_message(new_msg, topic, from, date);
 
+                //printf("ENTROU NO ADD UNREAD MESSAGE\n");
+
                 pthread_mutex_lock(&mutex_groups);
+
+                //printf("ENTROU NO MUTEX GROUPS\n");
 
                 Group *group = get_group_by_name(group_name);
 
                 if (get_participant_by_username(group, from) == NULL)
                 {
-                    printf("ENTROU NO ADD PARTICIPANT\n");
+                    //printf("ENTROU NO ADD PARTICIPANT\n");
                     add_participant(group, from, 0);
                 }
                 else
                 {
-                    printf("ENTROU NO CHANGE PARTICIPANT STATUS\n");
+                    //printf("ENTROU NO CHANGE PARTICIPANT STATUS\n");
                     change_participant_status(group, from, 0);
                 }
 
@@ -572,6 +576,9 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     else
     {
         // printf("ENTROU NO ELSE\n");
+
+        // printf("%s\n", (char *)message->payload);
+        // printf("%s\n", topic);
 
         if (strcmp(topic, selected_chat) != 0)
         {
@@ -674,7 +681,9 @@ int send_message(char msg[], char topic[])
     opts.onSuccess = on_send;
     opts.onFailure = on_send_failure;
     opts.context = ctx;
-    deliveredtoken = 0;
+
+    //if (strcmp(topic, "USERS") != 0)
+    //    printf("%s\n", payload);
 
     if ((rc = MQTTAsync_sendMessage(client, topic, &pubmsg, &opts)) != MQTTASYNC_SUCCESS)
     {

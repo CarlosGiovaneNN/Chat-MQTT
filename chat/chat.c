@@ -283,6 +283,8 @@ void load_chat()
 
     char buffer[256];
 
+    //printf("%s", selected_chat);
+
     while (1)
     {
         print_all_msgs_from_chat(selected_chat);

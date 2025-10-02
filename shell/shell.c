@@ -9,7 +9,7 @@
 
 void *run_shell(void *arg)
 {
-    system("clear");
+    ystem("clear");
 
     while (is_connected())
     {
