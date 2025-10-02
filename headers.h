@@ -57,6 +57,7 @@ typedef struct Messages
     char topic[256];
     char payload[256];
     int type;
+    char time[100];
     struct Messages *next;
 } Messages;
 
@@ -94,6 +95,7 @@ typedef struct MenuItem
     void *ptr;
 } MenuItem;
 
+// THREADS
 extern pthread_t thread_status, thread_shell;
 
 // MUTEXES

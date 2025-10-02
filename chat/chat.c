@@ -15,6 +15,8 @@ void load_chats_from_file();
 void show_chat_menu();
 void update_selected_chat(char *name);
 void load_chat();
+void show_group_participants(Chat *chat);
+void show_chat_topbar(char *topic);
 void show_message_from_user(char *date, char *msg);
 void show_message_from_other(char *from, char *date, char *msg);
 void load_messages(char *topic);
@@ -273,32 +275,46 @@ void show_chat_menu()
     load_chat();
 }
 
+// CARREGA O CHAT PELA PRIMEIRA VEZ - FAZ A LIMPA NO CONSOLE - ESCUTA O USUARIO
 void load_chat()
 {
-    load_messages(selected_chat);
+
+    system("clear");
+
+    char buffer[256];
 
     while (1)
     {
-        char buffer[256];
+        print_all_msgs_from_chat(selected_chat);
 
         fgets(buffer, sizeof(buffer), stdin);
 
         buffer[strcspn(buffer, "\n")] = '\0';
 
+        printf("%s\n", buffer);
+
         if (strcmp(buffer, "/quit") == 0)
             break;
 
-        send_message(buffer, selected_chat);
+        if (send_message(buffer, selected_chat) != EXIT_SUCCESS)
+        {
+            printf("Erro ao enviar a mensagem.\n");
+        }
+
+        system("clear");
     }
+
+    system("clear");
 
     strcpy(selected_chat, "");
 }
 
+// CARREGA AS MENSAGENS DO CHAT ( CHAMANDO A FUNCAO NO MESSAGES )
 void load_messages(char *topic)
 {
     pthread_mutex_lock(&mutex_chats);
 
-    Chat *chat = find_chat_by_topic(topic) ? find_chat_by_topic(topic) : find_chat_by_topic(topic);
+    Chat *chat = find_chat_by_topic(topic);
 
     if (!chat)
     {
@@ -308,18 +324,77 @@ void load_messages(char *topic)
         return;
     }
 
-    printf("Chat: %s\n", chat->topic);
-
     print_all_msgs_from_chat(chat->topic);
 
     pthread_mutex_unlock(&mutex_chats);
 }
 
-void show_message_from_user(char *date, char *msg)
+// MOSTRA OS PARTICIPANTES DO GRUPO
+void show_group_participants(Chat *chat)
 {
-    printf("[%s] %s: %s\n", date, user_id, msg);
+
+    pthread_mutex_lock(&mutex_chats);
+
+    if (!chat->is_group || !chat->participants)
+        return;
+
+    printf("Participantes: ");
+    Participant *p = chat->participants;
+    while (p)
+    {
+        printf("%s%s", p->username, p->next ? ", " : "");
+        p = p->next;
+    }
+    printf("\n\n");
+
+    pthread_mutex_unlock(&mutex_chats);
 }
 
+// MOSTRA A BARRA DO CHAT COM O NOME DO GRUPO OU NOME DO USUARIO
+void show_chat_topbar(char *topic)
+{
+    pthread_mutex_lock(&mutex_chats);
+
+    Chat *chat = find_chat_by_topic(topic);
+
+    int width = 50;
+    int len = strlen(chat->to);
+    int padding = (width - len - 2) / 2;
+
+    printf("\n");
+    printf("┌");
+    for (int i = 0; i < width - 2; i++)
+        printf("─");
+    printf("┐\n");
+
+    printf("│");
+    for (int i = 0; i < padding; i++)
+        printf(" ");
+    printf("%s", chat->to);
+    for (int i = 0; i < width - 2 - padding - len; i++)
+        printf(" ");
+    printf("│\n");
+
+    printf("└");
+    for (int i = 0; i < width - 2; i++)
+        printf("─");
+    printf("┘\n\n");
+
+    if (chat->is_group)
+    {
+        show_group_participants(chat);
+    }
+
+    pthread_mutex_unlock(&mutex_chats);
+}
+
+// MOSTRA AS MENSAGENS DO USUARIO DO CHAT
+void show_message_from_user(char *date, char *msg)
+{
+    printf("[%s] Você: %s\n", date, msg);
+}
+
+// MOSTRA AS MENSAGENS DE OUTROS USUARIOS
 void show_message_from_other(char *from, char *date, char *msg)
 {
     printf("[%s] %s: %s\n", date, from, msg);
@@ -331,6 +406,7 @@ void update_selected_chat(char *name)
     strcpy(selected_chat, name);
 }
 
+// SE INSCREVE EM TODOS OS CHATS QUE O USUARIO PARTICIPA
 void subscribe_all_chats()
 {
     pthread_mutex_lock(&mutex_chats);
@@ -437,6 +513,7 @@ Chat *find_chat(char *name, int is_group)
     return NULL;
 }
 
+// ENCONTRA UM CHAT PELO TOPIC
 Chat *find_chat_by_topic(char *topic)
 {
     pthread_mutex_lock(&mutex_chats);

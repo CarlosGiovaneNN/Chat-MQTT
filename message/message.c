@@ -14,10 +14,11 @@ Messages *control_messages = NULL;
 void on_send(void *context, MQTTAsync_successData *response);
 void on_send_failure(void *context, MQTTAsync_failureData *response);
 
-void add_message(Messages **array, pthread_mutex_t *mtx, char payload[], char topic[], char from[], int type);
-void add_all_received_message(char *payload, char topic[], char from[]);
-void add_unread_message(char *payload, char topic[], char from[]);
-void add_control_message(char topic[], char from[], char msg[], int type);
+void add_message(Messages **array, pthread_mutex_t *mtx, char payload[], char topic[], char from[], int type,
+                 char time[]);
+void add_all_received_message(char *payload, char topic[], char from[], char time[]);
+void add_unread_message(char *payload, char topic[], char from[], char time[]);
+void add_control_message(char topic[], char from[], char msg[], int type, char time[]);
 void clear_unread_messages();
 void remove_control_message(int index);
 void parse_message(char *message, char *from, char *date, char *msg);
@@ -58,7 +59,8 @@ void on_send_failure(void *context, MQTTAsync_failureData *response)
 }
 
 // ADICIONA A MSG NO ARRAY - { ARRAY DE MENSAGENS, MUTEX DA ARRAY, MENSAGEM, TOPICO, NOME DO USUARIO, TIPO }
-void add_message(Messages **array, pthread_mutex_t *mtx, char payload[], char topic[], char from[], int type)
+void add_message(Messages **array, pthread_mutex_t *mtx, char payload[], char topic[], char from[], int type,
+                 char time[])
 {
     Messages *new_message = malloc(sizeof(Messages));
     if (!new_message)
@@ -67,6 +69,8 @@ void add_message(Messages **array, pthread_mutex_t *mtx, char payload[], char to
     strcpy(new_message->topic, topic);
     strcpy(new_message->payload, payload);
     strcpy(new_message->from, from);
+    strcpy(new_message->time, time);
+
     new_message->next = NULL;
     new_message->type = type;
 
@@ -90,22 +94,22 @@ void add_message(Messages **array, pthread_mutex_t *mtx, char payload[], char to
 }
 
 // ADICIONA A MSG NO ARRAY DE MENSAGENS RECEBIDAS
-void add_all_received_message(char *payload, char topic[], char from[])
+void add_all_received_message(char *payload, char topic[], char from[], char time[])
 {
-    add_message(&all_received_messages, &mutex_all_received, payload, topic, from, MESSAGE_NORMAL);
+    add_message(&all_received_messages, &mutex_all_received, payload, topic, from, MESSAGE_NORMAL, time);
 }
 
 // ADICIONA A MSG NO ARRAY DE MENSAGENS NAO LIDAS
-void add_unread_message(char *payload, char topic[], char from[])
+void add_unread_message(char *payload, char topic[], char from[], char time[])
 {
-    add_message(&unread_messages, &mutex_unread, payload, topic, from, MESSAGE_NORMAL);
-    add_all_received_message(payload, topic, from);
+    add_message(&unread_messages, &mutex_unread, payload, topic, from, MESSAGE_NORMAL, time);
+    add_all_received_message(payload, topic, from, time);
 }
 
 // ADICIONA A MSG NO ARRAY DE MENSAGENS DE CONTROLE
-void add_control_message(char topic[], char from[], char msg[], int type)
+void add_control_message(char topic[], char from[], char msg[], int type, char time[])
 {
-    add_message(&control_messages, &mutex_control, msg, topic, from, type);
+    add_message(&control_messages, &mutex_control, msg, topic, from, type, time);
 }
 
 // TO DO
@@ -265,7 +269,7 @@ void read_pending_messages_control()
                 char new_msg[256];
 
                 sprintf(new_msg, "Convidou voce para o grupo: %s", current_group->name);
-                add_control_message(current_group->name, user_id, new_msg, MESSAGE_GROUP_INVITATION);
+                add_control_message(current_group->name, user_id, new_msg, MESSAGE_GROUP_INVITATION, "NULL");
             }
         }
 
@@ -403,10 +407,10 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     // printf("%s\n", topic);
     // printf("%d\n", strcmp(topic, id_control));
 
-    if (strcmp(topic, "USERS") != 0) // dps remover
-    {
-        printf("%s\n", (char *)message->payload);
-    }
+    // if (strcmp(topic, "USERS") != 0) // dps remover
+    // {
+    //     printf("%s\n", (char *)message->payload);
+    // }
 
     if (strcmp(topic, "USERS") == 0)
     {
@@ -457,7 +461,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
                 sscanf(msg, "%d;%[^;];", &option, group_name);
                 sprintf(new_msg, "Aceitou o convite para o grupo: %s", group_name);
 
-                add_unread_message(new_msg, topic, from);
+                add_unread_message(new_msg, topic, from, date);
 
                 pthread_mutex_lock(&mutex_groups);
 
@@ -479,7 +483,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
             {
                 sscanf(msg, "%d;%[^;];", &option, group_name);
                 sprintf(new_msg, "Recusou o convite para o grupo: %s", group_name);
-                add_unread_message(topic, from, new_msg);
+                add_unread_message(topic, from, new_msg, date);
 
                 // Group *group = get_group_by_name(group_name);
 
@@ -505,17 +509,17 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
             sprintf(new_msg, "Convidou voce para o grupo: %s", group_name);
 
-            add_control_message(topic, from, new_msg, MESSAGE_GROUP_INVITATION);
+            add_control_message(topic, from, new_msg, MESSAGE_GROUP_INVITATION, date);
         }
         else if (option == IDCONTROL_CHAT_INVITATION)
         {
-            add_control_message(topic, from, "Pede para voce entrar no chat", MESSAGE_CHAT_INVITATION);
+            add_control_message(topic, from, "Pede para voce entrar no chat", MESSAGE_CHAT_INVITATION, date);
         }
         else if (option == IDCONTROL_CHAT_INVITATION_ACCEPTED)
         {
             printf("aceitou\n");
             sprintf(new_msg, "%s aceitou o convite para o chat", from);
-            add_unread_message(topic, from, new_msg);
+            add_unread_message(topic, from, new_msg, date);
 
             char topic[128];
             char new_chat[100];
@@ -529,7 +533,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
         else if (option == IDCONTROL_CHAT_INVITATION_REJECTED)
         {
             sprintf(new_msg, "%s recusou o convite para o chat", from);
-            add_unread_message(topic, from, new_msg);
+            add_unread_message(topic, from, new_msg, date);
         }
         else if (option == IDCONTROL_GROUP_ASK_TO_JOIN)
         {
@@ -537,7 +541,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
             printf("%s\n", (char *)message->payload);
 
-            add_control_message(topic, from, "Pede permissao para entrar no grupo", MESSAGE_GROUP_ASK_TO_JOIN);
+            add_control_message(topic, from, "Pede permissao para entrar no grupo", MESSAGE_GROUP_ASK_TO_JOIN, date);
         }
         else
         {
@@ -555,43 +559,42 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
             if (strcmp(user_id, from) == 0)
                 return;
 
-            add_unread_message(msg, topic, from);
+            add_unread_message(msg, topic, from, date);
         }
         else
         {
             // printf("ENTROU NO ELSE\n");
 
-            add_all_received_message(msg, topic, from);
+            add_all_received_message(msg, topic, from, date);
 
             if (strcmp(user_id, from) == 0)
                 return;
 
-            show_message_from_other(from, topic, msg);
+            show_message_from_other(from, date, msg);
         }
     }
 }
 
+// PRINTA TODAS AS MENSAGENS DO CHAT
 void print_all_msgs_from_chat(char *topic)
 {
     pthread_mutex_lock(&mutex_all_received);
 
     Messages *current = all_received_messages;
 
+    show_chat_topbar(topic);
+
     while (current != NULL)
     {
-        printf("ENTROU NO WHILE\n");
         if (strcmp(current->topic, topic) == 0)
         {
-            printf("ENTROU NO IF\n");
             if (strcmp(current->from, user_id) == 0)
             {
-                printf("ENTROU NO IF\n");
-                show_message_from_user(current->topic, current->payload);
+                show_message_from_user(current->time, current->payload);
             }
             else
             {
-                printf("ENTROU NO ELSE\n");
-                show_message_from_other(current->from, current->topic, current->payload);
+                show_message_from_other(current->from, current->time, current->payload);
             }
         }
         current = current->next;
