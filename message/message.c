@@ -475,6 +475,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
                 }
                 else
                 {
+                    printf("ENTROU NO CHANGE PARTICIPANT STATUS\n");
                     change_participant_status(group, from, 0);
                 }
 

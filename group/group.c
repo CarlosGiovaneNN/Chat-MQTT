@@ -519,21 +519,37 @@ int toggle_participant_status_file(Group *group, char *username)
 
             while (fgets(line, sizeof(line), in))
             {
-                // remove \n ou \r\n do final
                 line[strcspn(line, "\r\n")] = 0;
 
-                if (strstr(line, username) && strstr(line, "(pending)"))
+                if (strncmp(line, "- ", 2) == 0)
                 {
-                    fprintf(out, "- %s (active)\n", username);
+                    char name_in_line[100];
+                    char status[20];
+
+                    if (sscanf(line, "- %99s (%19[^)])", name_in_line, status) == 2)
+                    {
+                        if (strcmp(name_in_line, username) == 0)
+                        {
+                            if (strcmp(status, "pending") == 0)
+                            {
+                                printf("TROCOU PARA ATIVO\n");
+                                fprintf(out, "- %s (active)\n", username);
+                            }
+                            else if (strcmp(status, "active") == 0)
+                            {
+                                printf("TROCOU PARA PENDENTE\n");
+                                fprintf(out, "- %s (pending)\n", username);
+                            }
+                            else
+                            {
+                                fprintf(out, "%s\n", line);
+                            }
+                            continue;
+                        }
+                    }
                 }
-                else if (strstr(line, username) && strstr(line, "(active)"))
-                {
-                    fprintf(out, "- %s (pending)\n", username);
-                }
-                else
-                {
-                    fprintf(out, "%s\n", line);
-                }
+
+                fprintf(out, "%s\n", line);
             }
 
             fclose(in);
