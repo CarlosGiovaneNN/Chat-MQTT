@@ -20,7 +20,7 @@ int subscribe_topic(char *topic);
 // MENSAGEM DE PERDA DE CONEXAO
 void connlost(void *context, char *cause)
 {
-    MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer5;
+    MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
     int rc;
 
     printf("\nConnection lost\n");
@@ -29,7 +29,7 @@ void connlost(void *context, char *cause)
 
     printf("Reconnecting...\n");
     conn_opts.keepAliveInterval = 20;
-    conn_opts.cleanstart = 0;
+    conn_opts.cleansession = 0;
     conn_opts.onSuccess = on_connect;
     conn_opts.onFailure = on_connect_failure;
     conn_opts.context = client;
@@ -37,6 +37,10 @@ void connlost(void *context, char *cause)
     if ((rc = MQTTAsync_connect(client, &conn_opts)) != MQTTASYNC_SUCCESS)
     {
         printf("Failed to start reconnect, return code %d\n", rc);
+    }
+    else
+    {
+        printf("Reconnected\n");
     }
 }
 
@@ -100,7 +104,7 @@ int subscribe_topic(char *topic)
 
     int rc;
 
-    printf("Subscribing to topic %s\n", topic);
+    // printf("Subscribing to topic %s\n", topic);
 
     if ((rc = MQTTAsync_subscribe(client, topic, QOS, &opts)) != MQTTASYNC_SUCCESS)
     {

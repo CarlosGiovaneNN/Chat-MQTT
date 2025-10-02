@@ -113,11 +113,24 @@ void add_control_message(char topic[], char from[], char msg[], int type, char t
     add_message(&control_messages, &mutex_control, msg, topic, from, type, time);
 }
 
-// TO DO
+// LIMPA O ARRAY DE MENSAGENS NAO LIDAS
 void clear_unread_messages()
 {
-    // falta fazer correto, com o free em tds
+    pthread_mutex_lock(&mutex_unread);
+
+    Messages *curr = unread_messages;
+    while (curr)
+    {
+        Messages *tmp = curr->next;
+
+        free(curr);
+
+        curr = tmp;
+    }
+
     unread_messages = NULL;
+
+    pthread_mutex_unlock(&mutex_unread);
 }
 
 // REMOVE A MSG NO ARRAY DE MENSAGENS DE CONTROLE
@@ -224,6 +237,8 @@ void print_all_received_messages()
 void print_unread_messages()
 {
     print_messages(unread_messages, &mutex_unread);
+
+    clear_unread_messages();
 }
 
 /*

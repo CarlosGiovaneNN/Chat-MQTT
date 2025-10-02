@@ -8,9 +8,9 @@
 
 int main(int argc, char *argv[])
 {
-    if (argc < 3)
+    if (argc < 2 || argc > 3)
     {
-        printf("Erro ao passar argumentos\n./main <username> <password>\n");
+        printf("Erro ao passar argumentos\n./main <username>\n");
         return EXIT_FAILURE;
     }
 
@@ -19,11 +19,11 @@ int main(int argc, char *argv[])
     init_mutexes();
 
     load_users_from_file();
-    printf("Users loaded\n");
+    // printf("Users loaded\n");
     load_groups_from_file();
-    printf("Groups loaded\n");
+    // printf("Groups loaded\n");
     load_chats_from_file();
-    printf("Chats loaded\n");
+    // printf("Chats loaded\n");
 
     init_client();
 

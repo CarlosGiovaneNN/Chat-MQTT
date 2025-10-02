@@ -22,8 +22,6 @@ void show_reconnect_options()
     char buffer[10];
     fgets(buffer, sizeof(buffer), stdin);
 
-    printf("%s", buffer);
-
     if (buffer[0] == 's')
     {
 

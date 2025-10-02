@@ -9,8 +9,11 @@
 
 void *run_shell(void *arg)
 {
+    system("clear");
+
     while (is_connected())
     {
+
         printf("\n┌───────────────── MENU ───────────────┐\n");
         printf("│ 1 - Entrar no chat                   │\n");
         printf("│ 2 - Controle                         │\n");
@@ -26,6 +29,8 @@ void *run_shell(void *arg)
         fgets(buffer, sizeof(buffer), stdin);
 
         buffer[strcspn(buffer, "\n")] = '\0';
+
+        system("clear");
 
         if (strcmp(buffer, "1") == 0)
         {
