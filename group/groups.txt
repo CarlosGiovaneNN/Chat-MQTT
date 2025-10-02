@@ -1,6 +1,6 @@
 Group: teste
 Leader: user1
 Participants:
-- user (active)
+- user (pending)
 - user2 (pending)
 

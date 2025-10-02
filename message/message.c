@@ -288,6 +288,9 @@ void control_msg()
     printf("\n");
 
     pthread_mutex_lock(&mutex_control);
+    // printf("entrou\n");
+    // printf("Endereço da struct: %p\n", (void *)&control_messages);
+    // printf("Endereço do primeiro membro: %p\n", (void *)&control_messages->topic);
 
     for (Messages *message = control_messages; message != NULL; message = message->next)
     {

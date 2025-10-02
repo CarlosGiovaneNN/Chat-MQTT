@@ -26,6 +26,8 @@ void show_reconnect_options()
 
     if (buffer[0] == 's')
     {
+
+        init_mutexes();
         connect_client();
         create_threads();
         return;
