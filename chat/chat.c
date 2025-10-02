@@ -332,21 +332,54 @@ void load_messages(char *topic)
 // MOSTRA OS PARTICIPANTES DO GRUPO
 void show_group_participants(Chat *chat)
 {
-
     pthread_mutex_lock(&mutex_chats);
+    pthread_mutex_lock(&mutex_groups);
 
     if (!chat->is_group || !chat->participants)
+    {
+        pthread_mutex_unlock(&mutex_groups);
+        pthread_mutex_unlock(&mutex_chats);
         return;
+    }
 
-    printf("Participantes: ");
+    Group *group = get_group_by_name(chat->to);
+
+    char leader[256];
+    strncpy(leader, group->leader, sizeof(leader) - 1);
+    leader[sizeof(leader) - 1] = '\0';
+
+    int width = 50;
+    printf("┌");
+    for (int i = 0; i < width - 2; i++)
+        printf("─");
+    printf("┐\n");
+
+    printf("│ %-2d - %-28s [Líder]      │\n", 0, leader);
+
     Participant *p = chat->participants;
+    int count = 1;
     while (p)
     {
-        printf("%s%s", p->username, p->next ? ", " : "");
+        if (p->pending)
+        {
+            printf("│ %-2d - %-28s [Convidado]  │\n", count, p->username);
+        }
+        else
+        {
+
+            printf("│ %-2d - %-28s [Ativo]      │\n", count, p->username);
+        }
+
+        count++;
         p = p->next;
     }
-    printf("\n\n");
 
+    printf("└");
+    for (int i = 0; i < width - 2; i++)
+        printf("─");
+    printf("┘\n\n");
+
+    pthread_mutex_unlock(&mutex_groups);
     pthread_mutex_unlock(&mutex_chats);
 }
 
@@ -356,13 +389,11 @@ void show_chat_topbar(char *topic)
     pthread_mutex_lock(&mutex_chats);
 
     Chat *chat = find_chat_by_topic(topic);
-
     int width = 50;
     int len = strlen(chat->to);
     int padding = (width - len - 2) / 2;
 
-    printf("\n");
-    printf("┌");
+    printf("\n┌");
     for (int i = 0; i < width - 2; i++)
         printf("─");
     printf("┐\n");

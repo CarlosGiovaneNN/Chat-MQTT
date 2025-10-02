@@ -11,16 +11,16 @@ void *run_shell(void *arg)
 {
     while (is_connected())
     {
-        printf("------------MENU------------\n");
-        printf("1 - Entrar no chat\n");
-        printf("2 - Controle\n");
-        printf("3 - Listar mensagens\n");
-        printf("4 - Listar usuários\n");
-        printf("5 - Listar grupos\n");
-        printf("6 - Criar grupo\n");
-        printf("7 - Pedir acesso ao grupo\n");
-        printf("0 - Sair\n");
-        printf("-----------------------------\n");
+        printf("\n┌───────────────── MENU ───────────────┐\n");
+        printf("│ 1 - Entrar no chat                   │\n");
+        printf("│ 2 - Controle                         │\n");
+        printf("│ 3 - Listar mensagens                 │\n");
+        printf("│ 4 - Listar usuários                  │\n");
+        printf("│ 5 - Listar grupos                    │\n");
+        printf("│ 6 - Criar grupo                      │\n");
+        printf("│ 7 - Pedir acesso ao grupo            │\n");
+        printf("│ 0 - Sair                             │\n");
+        printf("└──────────────────────────────────────┘\n");
 
         char buffer[256];
         fgets(buffer, sizeof(buffer), stdin);
