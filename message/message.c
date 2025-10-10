@@ -390,6 +390,14 @@ void control_msg()
         {
             sprintf(message, "%d;%s;", GROUP_INVITATION_REJECTED, group_name);
 
+            remove_participant_from_group_file(group_name, user_id);
+
+            phtread_mutex_lock(&mutex_groups);
+
+            remove_participant_from_group(get_group_by_name(group_name), user_id);
+
+            phtread_mutex_unlock(&mutex_groups);
+            
             send_message(message, "GROUPS");
         }
         else if (msg->type == MESSAGE_CHAT_INVITATION)
@@ -509,7 +517,16 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
                 sprintf(new_msg, "Recusou o convite para o grupo: %s", group_name);
                 add_unread_message(topic, from, new_msg, date);
 
-                // Group *group = get_group_by_name(group_name);
+                pthread_mutex_lock(&mutex_groups);
+
+                Group *group = get_group_by_name(group_name);
+
+                if (remove_participant_from_group(group, from) == 0)
+                {
+                    printf("Erro ao remover participante do grupo\n");
+                }
+
+                pthread_mutex_unlock(&mutex_groups);
 
                 // change_participant_status(group, from, -1);
             }

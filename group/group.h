@@ -20,6 +20,9 @@ int add_participant_to_group_file(char *group_name, char *username, Group *group
 
 int toggle_participant_status_file(Group *group, char *username);
 
+int remove_participant_from_group_file(char *group_name, char *username);
+int remove_participant_from_group(Group *group, char *username);
+
 Group *get_group_by_name(char *group_name);
 
 Participant *get_participant_by_username(Group *group, char *username);

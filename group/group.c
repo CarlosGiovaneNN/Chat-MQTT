@@ -19,6 +19,8 @@ void join_group_menu();
 
 int toggle_participant_status_file(Group *group, char *username);
 int add_participant_to_group_file(char *group_name, char *username, Group *group, int pending);
+int remove_participant_from_group_file(char *group_name, char *username);
+int remove_participant_from_group(Group *group, char *username);
 
 Group *get_group_by_index(int index);
 Group *get_group_by_name(char *group_name);
@@ -657,6 +659,97 @@ int add_participant_to_group_file(char *group_name, char *username, Group *group
     rename("tmp.txt", FILE_GROUPS);
 
     return group_found;
+}
+
+// REMOVE PARTICIPANTE DO GRUPO NO ARQUIVO
+int remove_participant_from_group_file(char *group_name, char *username)
+{
+    FILE *in = fopen(FILE_GROUPS, "r");
+    if (!in)
+    {
+        perror("Erro ao abrir group.txt");
+        return 0;
+    }
+
+    FILE *out = fopen("tmp.txt", "w");
+    if (!out)
+    {
+        perror("Erro ao criar tmp.txt");
+        fclose(in);
+        return 0;
+    }
+
+    char line[256];
+    int inside_group = 0;
+    int group_found = 0;
+
+    while (fgets(line, sizeof(line), in))
+    {
+        // remove \n ou \r\n do final
+        line[strcspn(line, "\r\n")] = 0;
+
+        if (strncmp(line, "Group: ", 7) == 0)
+        {
+            char current_group[100];
+            sscanf(line + 7, "%[^\n]", current_group);
+
+            if (strcmp(current_group, group_name) == 0)
+            {
+                inside_group = 1;
+                group_found = 1;
+            }
+            else
+            {
+                inside_group = 0;
+            }
+        }
+
+        // Se a linha contém o participante e estamos dentro do grupo, pule
+        if (inside_group && strstr(line, username))
+        {
+            // Ignora esta linha
+            continue;
+        }
+
+        // Escreve a linha normalmente
+        fprintf(out, "%s\n", line);
+    }
+
+    fclose(in);
+    fclose(out);
+
+    remove(FILE_GROUPS);
+    rename("tmp.txt", FILE_GROUPS);
+
+    return group_found;
+}
+
+// REMOVE PARTICIPANTE DO GRUPO
+int remove_participant_from_group(Group *group, char *username)
+{
+    pthread_mutex_lock(&mutex_groups);
+
+    Participant *p = group->participants;
+    Participant *prev = NULL;
+    while (p)
+    {
+        if (strcmp(p->username, username) == 0)
+        {
+            if (prev)
+                prev->next = p->next;
+            else
+                group->participants = p->next;
+            free(p);
+            pthread_mutex_unlock(&mutex_groups);
+            return 1;
+        }
+        prev = p;
+        p = p->next;
+    }
+
+    pthread_mutex_unlock(&mutex_groups);
+
+    return 0;
 }
 
 // RETORNA O GRUPO POR INDICE
