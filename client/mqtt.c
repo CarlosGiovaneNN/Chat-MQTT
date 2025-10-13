@@ -84,12 +84,28 @@ void on_subscribe_failure(void *context, MQTTAsync_failureData *response)
 // AO RECEBER UMA MENSAGEM
 int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *message)
 {
+    if (strncmp((char *)message->payload, "ENC:", 4) != 0)
+    {
+        printf("Recebendo mensagem nao criptografada\n");
+        MQTTAsync_freeMessage(&message);
+        MQTTAsync_free(topic_name);
+        return 1;
+    }
 
-    on_recv_message(message, topic_name);
+    unsigned char decrypted[1024];
+
+    int decrypted_len = aes_decrypt((unsigned char *)message->payload + 4, message->payloadlen - 4, decrypted);
+
+    decrypted[decrypted_len] = '\0';
+
+    MQTTAsync_message decrypted_msg = *message;
+    decrypted_msg.payload = decrypted;
+    decrypted_msg.payloadlen = decrypted_len;
+
+    on_recv_message(&decrypted_msg, topic_name);
 
     MQTTAsync_freeMessage(&message);
     MQTTAsync_free(topic_name);
-
     return 1;
 }
 

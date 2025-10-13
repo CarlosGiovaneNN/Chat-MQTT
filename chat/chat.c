@@ -102,7 +102,7 @@ void load_chats_by_groups()
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// CARREGA OS CHATS DO ARQUIVO
+// CARREGA OS CHATS DO ARQUIVO - CRIPTOGRAFADO
 void load_chats_from_file()
 {
     FILE *file = fopen(FILE_CHATS, "r");
@@ -114,16 +114,18 @@ void load_chats_from_file()
 
     pthread_mutex_lock(&mutex_chats);
 
-    char line[512];
+    char line[1024];
     while (fgets(line, sizeof(line), file))
     {
         line[strcspn(line, "\r\n")] = 0;
+        if (strlen(line) == 0)
+            continue;
 
-        if (strstr(line, user_id) == NULL)
+        if (strstr((char *)line, user_id) == NULL)
             continue;
 
         char user1[128] = {0}, user2[128] = {0}, timestamp[128] = {0};
-        int parts = sscanf(line, "%127[^_]_%127[^_]_%127s", user1, user2, timestamp);
+        int parts = sscanf((char *)line, "%127[^_]_%127[^_]_%127s", user1, user2, timestamp);
 
         if (parts != 3)
             continue;
@@ -143,8 +145,10 @@ void load_chats_from_file()
         if (!chat)
             continue;
 
-        strncpy(chat->topic, line, sizeof(chat->topic) - 1);
+        strncpy(chat->topic, (char *)line, sizeof(chat->topic) - 1);
         chat->topic[sizeof(chat->topic) - 1] = '\0';
+
+        // printf("Chat: %s\n", chat->topic);
 
         strncpy(chat->to, other, sizeof(chat->to) - 1);
         chat->to[sizeof(chat->to) - 1] = '\0';
@@ -156,7 +160,6 @@ void load_chats_from_file()
     }
 
     fclose(file);
-
     pthread_mutex_unlock(&mutex_chats);
 
     load_chats_by_groups();
@@ -472,37 +475,40 @@ int add_private_chat(char *name, char *topic)
 
     Chat *chat = find_chat_by_topic(topic);
 
+    if (chat)
+    {
+        pthread_mutex_unlock(&mutex_chats);
+        return 0;
+    }
+
+    chat = malloc(sizeof(Chat));
     if (!chat)
     {
-
-        chat = malloc(sizeof(Chat));
-        if (!chat)
-        {
-            pthread_mutex_unlock(&mutex_chats);
-            return 0;
-        }
-
-        strncpy(chat->topic, topic, sizeof(chat->topic) - 1);
-        chat->topic[sizeof(chat->topic) - 1] = '\0';
-
-        chat->is_group = 0;
-
-        strcpy(chat->to, name);
-
-        chat->participants = NULL;
-
-        chat->next = chats;
-
-        chats = chat;
-
         pthread_mutex_unlock(&mutex_chats);
-        return 1;
+        return 0;
     }
+
+    strncpy(chat->topic, topic, sizeof(chat->topic) - 1);
+    chat->topic[sizeof(chat->topic) - 1] = '\0';
+
+    strncpy(chat->to, name, sizeof(chat->to) - 1);
+    chat->to[sizeof(chat->to) - 1] = '\0';
+
+    chat->is_group = 0;
+    chat->participants = NULL;
+
+    chat->next = chats;
+    chats = chat;
+
+    printf("Chat priva! %s\n", chat->topic);
+
+    subscribe_topic(chat->topic);
 
     pthread_mutex_unlock(&mutex_chats);
 
-    return 0;
+    return 1;
 }
+
 // CRIA UM NOVO CHAT
 char *create_chat(char *name, int is_group)
 {
@@ -518,6 +524,7 @@ char *create_chat(char *name, int is_group)
 
     chat->is_group = is_group;
 
+    pthread_mutex_lock(&mutex_groups);
     pthread_mutex_lock(&mutex_chats);
 
     chat->next = chats;
@@ -525,49 +532,48 @@ char *create_chat(char *name, int is_group)
 
     if (is_group)
     {
-        printf("Grupos disponíveis:\n");
-        pthread_mutex_lock(&mutex_groups);
+        // printf("Grupos disponíveis:\n");
 
         Group *g = get_group_by_name(name);
         if (g)
-        {
             chat->participants = g->participants;
-        }
         else
-        {
             chat->participants = NULL;
-        }
-
-        pthread_mutex_unlock(&mutex_groups);
 
         strcpy(chat->topic, name);
-
         subscribe_topic(chat->topic);
     }
     else
     {
-        printf("Usuários disponíveis:\n");
+        // printf("Usuários disponíveis:\n");
         chat->participants = NULL;
 
         FILE *file = fopen(FILE_CHATS, "a");
         if (!file)
+        {
+
+            pthread_mutex_unlock(&mutex_chats);
+            pthread_mutex_unlock(&mutex_groups);
+
             return NULL;
+        }
 
         time_t now = time(NULL);
         struct tm *t = localtime(&now);
         char timestamp[64];
         strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", t);
 
-        fprintf(file, "%s_%s_%s\n", user_id, name, timestamp);
-
-        fclose(file);
-
         sprintf(chat->topic, "%s_%s_%s", user_id, name, timestamp);
 
+        fprintf(file, "%s\n", chat->topic);
+        fclose(file);
+
         subscribe_topic(chat->topic);
+        // printf("Chat criado com sucesso! %s\n", chat->topic);
     }
 
     pthread_mutex_unlock(&mutex_chats);
+    pthread_mutex_unlock(&mutex_groups);
 
     return chat->topic;
 }

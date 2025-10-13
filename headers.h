@@ -2,6 +2,8 @@
 #define HEADERS_H
 
 #include <ctype.h>
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,8 +13,14 @@
 
 #include "MQTTAsync.h"
 
+#include "./AES/aes.h"
+
 #define ADDRESS "tcp://localhost:1883"
 #define QOS 1
+
+// AES
+#define AES_KEY ((unsigned char *)"12345678901234567890123456789012")
+#define AES_IV ((unsigned char *)"abcdefghijklmnop")
 
 // Types of messages
 #define MESSAGE_NORMAL 0
