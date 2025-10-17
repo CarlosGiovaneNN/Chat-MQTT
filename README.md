@@ -1,87 +1,99 @@
-# Aplicação de Bate-Papo com Protocolo MQTT
-
-## Sumário
-1. Introdução  
-2. Objetivos  
-3. Requisitos de Desenvolvimento  
-4. Estrutura de Controle por Tópicos  
-   4.1 Usuários  
-   4.2 Conversas One-to-One  
-   4.3 Grupos  
-5. Funcionalidades  
-6. Etapas do Projeto  
-   6.1 Etapa 1  
-   6.2 Etapa 2  
-7. Arquitetura do Sistema  
-8. Execução  
-9. Considerações Finais  
 
 
-# 1. Introdução
-O presente trabalho tem como objetivo o desenvolvimento de uma aplicação de **bate-papo (chat)** utilizando exclusivamente o protocolo **MQTT**.  
-A aplicação deverá oferecer comunicação **um-a-um (one-to-one)** e **em grupo (group chat)**, garantindo persistência de dados para usuários offline.  
+# Chat Seguro com MQTT em C
+
+Uma aplicação de bate-papo robusta e segura, desenvolvida em C, que utiliza o protocolo MQTT para comunicação em tempo real. O projeto implementa conversas privadas e em grupo, com foco em segurança, persistência de dados e uma arquitetura multithread para garantir uma experiência de usuário fluida e responsiva.
 
 
-# 2. Objetivos
-O projeto visa implementar uma solução de comunicação baseada em MQTT, atendendo aos seguintes objetivos:  
-- Comunicação entre usuários de forma privada e em grupo.  
-- Garantir unicidade dos identificadores de usuários (ID).  
-- Fornecer um mecanismo de persistência para usuários offline.  
-- Implementar uma interface em modo texto para interação do usuário.  
+## Funcionalidades Principais
+
+* **Comunicação Segura**: Todas as mensagens trocadas são criptografadas de ponta a ponta utilizando **AES-256**, garantindo a confidencialidade das conversas.
+* **Conversas Privadas e em Grupo**: Crie chats privados com outros usuários ou participe de grupos temáticos.
+* **Gerenciamento de Grupos**: Crie grupos, adicione participantes e gerencie convites. Cada grupo possui um líder com permissões para aceitar novos membros.
+* **Status de Usuário**: Veja quais usuários estão online ou offline em tempo real.
+* **Persistência de Dados**: Mensagens e informações de usuários/grupos são salvas em arquivos locais, garantindo que os dados não sejam perdidos ao reiniciar a aplicação.
+* **Interface de Linha de Comando**: Um menu interativo e simples de usar para navegar por todas as funcionalidades do chat.
+* **Arquitetura Multithread**: O sistema utiliza threads para gerenciar a interface do usuário e as tarefas de rede de forma independente, evitando bloqueios e garantindo que o programa continue responsivo.
 
 
-# 3. Requisitos de Desenvolvimento
-- **Sistema Operacional**: Linux  
-- **Biblioteca**: Eclipse Paho  
-- **Linguagem de Programação**: C  
-- **Protocolo**: MQTT  
+## Como Executar
 
+### Pré-requisitos
 
-# 4. Estrutura de Controle por Tópicos
+Antes de começar, certifique-se de que você tem os seguintes componentes instalados:
 
-## 4.1 Usuários
-- `USERS`: tópico global para publicação do estado online/offline de todos os usuários.  
-- `ID_Control`: tópico individual para cada usuário, usado em negociações de sessão.  
+1.  **GCC (Compilador C)**: Essencial para compilar o projeto.
+2.  **Make**: Para automatizar o processo de compilação.
+3.  **Broker MQTT**: O broker [Mosquitto](https.mosquitto.org) deve estar instalado e rodando na máquina local.
+4. **Bibliotecas de Desenvolvimento**:
+    * **Paho MQTT C**: Biblioteca para comunicação MQTT.
+    * **OpenSSL**: Biblioteca para as funções de criptografia.
+    
 
-## 4.2 Conversas One-to-One
-- Sessões são criadas com tópicos exclusivos no formato:  
+### Compilação
 
-   `usuario1\_usuario2\_timestamp`
+Com todas as dependências instaladas, clone o repositório e compile o projeto usando o `Makefile` fornecido:
 
-- O identificador da sessão é comunicado ao solicitante via publicação no tópico de controle.  
+```bash
+git clone https://github.com/CarlosGiovaneNN/Chat-MQTT.git
+cd Chat-MQTT
+make
+```
 
-## 4.3 Grupos
-- `GROUPS`: tópico global para informações de grupos.  
-- Cada grupo possui um líder responsável pela aceitação de novos membros.  
-- A atualização da lista de membros é publicada no tópico `GROUPS`.  
+Este comando irá compilar todos os arquivos `.c` e gerar um executável chamado `main`.
 
+### Execução
 
-# 5. Funcionalidades
-A aplicação contempla:  
-1. Listagem de usuários e status (online/offline).  
-2. Criação de grupos, com o criador assumindo o papel de líder.  
-3. Listagem de grupos cadastrados, incluindo líder e membros.  
-4. Solicitação e aceite de conversas one-to-one.  
-5. Gerenciamento de grupos, com inclusão de novos membros.  
-6. Persistência de mensagens para usuários offline.  
+Para iniciar o cliente de chat, execute o programa a partir do terminal, passando um nome de usuário único como argumento:
 
+```bash
+./main <seu_nome_de_usuario>
+```
 
-# 6. Etapas do Projeto
+**Exemplo:**
 
-## 6.1 Etapa 1
-- Definição da arquitetura.  
-- Estruturação dos tópicos de controle.  
-- Implementação da interface em modo texto.  
+```bash
+./main user
+```
 
-## 6.2 Etapa 2
-- Implementação da comunicação efetiva.  
-- Elaboração do relatório descritivo.  
+Você pode abrir múltiplos terminais e executar o programa com diferentes nomes de usuário para simular uma conversa entre eles.
 
+## Arquitetura do Sistema
 
-# 7. Arquitetura do Sistema
-A arquitetura é composta por:  
-- **Camada de Comunicação MQTT**: utiliza a biblioteca Paho para enviar e receber mensagens.  
-- **Camada de Controle**: gerencia usuários, grupos, solicitações e status.  
-- **Camada de Persistência**: armazena dados de sessões e mensagens.  
-- **Interface de Usuário**: menus interativos em modo texto.  
+O sistema é modular e projetado em torno do protocolo MQTT, utilizando uma estrutura de tópicos para gerenciar a comunicação.
 
+### Estrutura de Tópicos
+
+  * `USERS`: Tópico global usado para anunciar o status (online/offline) de todos os usuários. Mensagens de "connected" e "disconnected" são publicadas aqui.
+  * `GROUPS`: Tópico para a criação e gerenciamento de grupos. Quando um novo grupo é criado ou um membro é adicionado, uma mensagem é publicada aqui para notificar outros clientes.
+  * `<username>_CONTROL`: Tópico de controle individual para cada usuário. É usado para negociações que não devem ser públicas, como convites para chats privados e pedidos para entrar em grupos.
+  * Tópicos de Chat Dinâmicos:
+      * **Grupos**: O nome do grupo serve como tópico para as mensagens (`<nome_do_grupo>`).
+      * **Privados**: Um tópico único é gerado para cada conversa privada, combinando os nomes dos usuários e um timestamp (`usuario1_usuario2_timestamp`), garantindo que a conversa seja exclusiva.
+
+### Criptografia
+
+A segurança é um pilar deste projeto. Antes de serem publicadas, todas as mensagens são formatadas, criptografadas com **AES-256**, e então publicadas no tópico MQTT. Ao receber uma mensagem, o cliente a descriptografa antes de exibi-la ao usuário.
+
+## Monitoramento e Debug
+
+Para facilitar o desenvolvimento e a depuração, o projeto inclui um script de monitoramento (`monitor_mqtt.sh`) que abre três terminais para observar a atividade do broker:
+
+1.  **Visualizador de Mensagens**: Inscreve-se em todos os tópicos (`#`) e exibe todas as mensagens publicadas em tempo real.
+2.  **Logs do Broker**: Mostra os logs do serviço Mosquitto, útil para identificar erros de conexão e autenticação.
+3.  **Analisador de Tráfego (TCPDump)**: Captura e exibe o tráfego de rede bruto na porta 1883, permitindo uma análise de baixo nível dos pacotes MQTT.
+
+Para usar, dê permissão de execução e rode o script:
+
+```bash
+chmod +x monitor_mqtt.sh
+./monitor_mqtt.sh
+```
+
+## Limpeza
+
+Para remover todos os arquivos de objeto (`.o`) e o executável `main`, utilize o comando:
+
+```bash
+make clean
+```
