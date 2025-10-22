@@ -76,6 +76,11 @@ void add_participant(Group *group, char *username, int pending)
         current->next = p;
     }
 
+    if (strcmp(user_id, username) == 0)
+    {
+        create_chat(group->name, 1);
+    }
+
     pthread_mutex_unlock(&mutex_groups);
 }
 
@@ -595,6 +600,7 @@ int toggle_participant_status_file(Group *group, char *username)
 // ADICIONA PARTICIPANTE AO GRUPO NO ARQUIVO - RETORNA 1 SE O PARTICIPANTE FOI ADICIONADO
 int add_participant_to_group_file(char *group_name, char *username, Group *group, int pending)
 {
+    // todo
     FILE *in = fopen(FILE_GROUPS, "r");
     if (!in)
     {

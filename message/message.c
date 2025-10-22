@@ -353,10 +353,9 @@ void control_msg()
 
     if (buffer[0] == 's')
     {
-        printf("\n%d\n", msg->type);
         if (msg->type == MESSAGE_GROUP_INVITATION)
         {
-            sprintf(message, "%d;%s;", GROUP_INVITATION_ACCEPTED, group_name);
+            sprintf(message, "%d;%s;0;", GROUP_INVITATION_ACCEPTED, group_name);
 
             send_message(message, "GROUPS");
 
@@ -369,7 +368,6 @@ void control_msg()
         }
         else if (msg->type == MESSAGE_CHAT_INVITATION)
         {
-            printf("entrou\n");
             sprintf(message, "%d;", IDCONTROL_CHAT_INVITATION_ACCEPTED);
             sprintf(topic, "%s_CONTROL", msg->from);
 
@@ -377,9 +375,7 @@ void control_msg()
         }
         else if (msg->type == MESSAGE_GROUP_ASK_TO_JOIN)
         {
-            printf("entrou 2\n");
-
-            sprintf(message, "%d;%s;", GROUP_INVITATION_ACCEPTED, group_name);
+            sprintf(message, "%d;%s;1;", GROUP_INVITATION_ACCEPTED, group_name);
 
             send_message(message, "GROUPS");
 
@@ -470,7 +466,9 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
             if (option == GROUP_INVITATION_ACCEPTED)
             {
-                sscanf(msg, "%d;%[^;];", &option, group_name);
+
+                int fromAsk = 0;
+                sscanf(msg, "%d;%[^;];%d;", &option, group_name, &fromAsk);
                 sprintf(new_msg, "Aceitou o convite para o grupo: %s", group_name);
 
                 add_unread_message(new_msg, topic, from, date);
@@ -479,9 +477,9 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
                 Group *group = get_group_by_name(group_name);
 
-                if (get_participant_by_username(group, from) == NULL)
+                if (get_participant_by_username(group, from) == NULL || fromAsk == 1)
                 {
-                    add_participant(group, from, 0);
+                    add_participant(group, fromAsk ? user_id : from, 0);
                 }
                 else
                 {
@@ -556,7 +554,12 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
         }
         else if (option == IDCONTROL_GROUP_ASK_TO_JOIN)
         {
-            add_control_message(topic, from, "Pede permissao para entrar no grupo", MESSAGE_GROUP_ASK_TO_JOIN, date);
+            char group_name[100];
+            sscanf(msg, "%d;%[^;];", &option, group_name);
+
+            sprintf(new_msg, "Pede permissao para entrar no grupo: %s", group_name);
+
+            add_control_message(topic, from, new_msg, MESSAGE_GROUP_ASK_TO_JOIN, date);
         }
         else if (option == IDCONTROL_ADD_PRIVATE_CHAT)
         {
