@@ -31,6 +31,7 @@ void print_all_msgs_from_chat(char *topic);
 char *format_message();
 
 int send_message(char msg[], char topic[]);
+int compare_time(char time1_str[], double limit_time);
 
 Messages *get_control_message(int index);
 
@@ -426,11 +427,19 @@ void control_msg()
 // AO RECEBER MENSAGEM DE QUALQUER TOPICO
 void on_recv_message(MQTTAsync_message *message, char *topic)
 {
+    printf("%s\n", (char *)message->payload);
     char from[100] = {0}, date[100] = {0}, msg[100] = {0};
     parse_message((char *)message->payload, from, date, msg);
 
     if (strlen(from) == 0 || strlen(date) == 0 || strlen(msg) == 0)
         return;
+
+    if (compare_time(date, 30) && (!strcmp(topic, "USERS") || !strcmp(topic, "GROUPS")))
+    {
+        return;
+    }
+
+    printf("Passou\n");
 
     char id_control[100] = {0};
     sprintf(id_control, "%s_CONTROL", user_id);
@@ -453,7 +462,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     }
     else if (strcmp(topic, "GROUPS") == 0)
     {
-        printf("%s\n", (char *)message->payload);
+        // printf("%s\n", (char *)message->payload);
 
         if (strcmp(user_id, from) == 0)
         {
@@ -462,7 +471,6 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
         if (strncmp(msg, "Group:", 6) == 0)
         {
-            printf("s\n");
             add_group_by_message(msg);
         }
         else
@@ -657,22 +665,60 @@ int send_message(char msg[], char topic[])
     MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
     int rc;
 
-    char payload[512] = {0};
     char *prefix = format_message();
     if (!prefix)
         return EXIT_FAILURE;
 
+    // --- CORREÇÃO AQUI ---
+
+    // 1. Calcule o tamanho total necessário dinamicamente
+    size_t total_len = strlen(prefix) + strlen(msg) + 1; // +1 para o '\0'
+
+    // 2. Aloque memória do heap, em vez de usar um buffer fixo da stack
+    char *payload = malloc(total_len);
+    if (!payload)
+    {
+        free(prefix);
+        perror("Erro ao alocar payload para send_message");
+        return EXIT_FAILURE;
+    }
+
+    // 3. Construa o payload de forma segura
     strcpy(payload, prefix);
-    free(prefix);
     strcat(payload, msg);
 
-    unsigned char encrypted_payload[1024] = {0};
+    free(prefix); // Libera o prefixo, pois já foi copiado
+
+    // --- FIM DA CORREÇÃO ---
+
+    unsigned char encrypted_payload[1024]; // O buffer de criptografia
     int enc_len = aes_encrypt((unsigned char *)payload, strlen(payload), encrypted_payload);
 
-    char payload_with_flag[1050] = {0};
-    sprintf(payload_with_flag, "ENC:%.*s", enc_len, encrypted_payload);
+    // 4. Libere o payload de texto plano assim que for criptografado
+    free(payload);
 
-    pubmsg.payload = payload_with_flag;
+    // Cuidado aqui: se enc_len for > 1045, você terá outro overflow.
+    // Vamos garantir que não estoure.
+    if (enc_len > sizeof(encrypted_payload))
+    {
+        // Isso não deve acontecer se aes_encrypt for chamado corretamente
+        enc_len = sizeof(encrypted_payload);
+    }
+
+    // Aumentei o tamanho do payload_with_flag para segurança
+    size_t flag_payload_len = 4 + enc_len;
+    char *payload_with_flag_dynamic = malloc(flag_payload_len + 1); // +1 para o '\0'
+    if (!payload_with_flag_dynamic)
+    {
+        perror("Erro ao alocar payload_with_flag");
+        return EXIT_FAILURE;
+    }
+
+    memcpy(payload_with_flag_dynamic, "ENC:", 4);
+    memcpy(payload_with_flag_dynamic + 4, encrypted_payload, enc_len);
+    payload_with_flag_dynamic[flag_payload_len] = '\0'; // Não é estritamente necessário para payloadlen, mas é bom
+
+    pubmsg.payload = payload_with_flag_dynamic;
     pubmsg.payloadlen = 4 + enc_len;
     pubmsg.qos = QOS;
     pubmsg.retained = 0;
@@ -690,10 +736,48 @@ int send_message(char msg[], char topic[])
         printf("Failed to start sendMessage, return code %d\n", rc);
         MQTTAsync_destroy(&client);
         free(ctx);
+        free(payload_with_flag_dynamic);
         return EXIT_FAILURE;
     }
 
+    free(payload_with_flag_dynamic);
+
     return EXIT_SUCCESS;
+}
+
+// COMPARA O TEMPPO ENVIADO COM O DE AGORA
+int compare_time(char time1_str[], double limit_time)
+{
+    time_t time2_now = time(NULL);
+
+    struct tm last_seen_tm = {0};
+    int day, mon, year, hour, min, sec;
+
+    if (sscanf(time1_str, "%d/%d/%d %d:%d:%d", &day, &mon, &year, &hour, &min, &sec) == 6)
+    {
+        last_seen_tm.tm_mday = day;
+        last_seen_tm.tm_mon = mon - 1;
+        last_seen_tm.tm_year = year - 1900;
+        last_seen_tm.tm_hour = hour;
+        last_seen_tm.tm_min = min;
+        last_seen_tm.tm_sec = sec;
+        last_seen_tm.tm_isdst = -1;
+
+        time_t last_seen_time_t = mktime(&last_seen_tm);
+
+        if (last_seen_time_t == (time_t)-1)
+        {
+            return 0;
+        }
+
+        double difference = difftime(time2_now, last_seen_time_t);
+
+        if (difference > limit_time)
+        {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 // OBTEM A MENSAGEM DE CONTROLE PELO INDICE

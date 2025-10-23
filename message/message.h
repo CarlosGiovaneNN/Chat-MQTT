@@ -14,5 +14,6 @@ void read_pending_messages_control();
 void print_all_msgs_from_chat(char *topic);
 
 int send_message(char msg[], char topic[]);
+int compare_time(char time1_str[], double limit_time);
 
 #endif
