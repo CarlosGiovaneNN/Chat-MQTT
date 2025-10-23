@@ -669,12 +669,9 @@ int send_message(char msg[], char topic[])
     if (!prefix)
         return EXIT_FAILURE;
 
-    // --- CORREÇÃO AQUI ---
+    // --- COMECO DO GPT ---
+    size_t total_len = strlen(prefix) + strlen(msg) + 1;
 
-    // 1. Calcule o tamanho total necessário dinamicamente
-    size_t total_len = strlen(prefix) + strlen(msg) + 1; // +1 para o '\0'
-
-    // 2. Aloque memória do heap, em vez de usar um buffer fixo da stack
     char *payload = malloc(total_len);
     if (!payload)
     {
@@ -683,42 +680,36 @@ int send_message(char msg[], char topic[])
         return EXIT_FAILURE;
     }
 
-    // 3. Construa o payload de forma segura
     strcpy(payload, prefix);
     strcat(payload, msg);
 
-    free(prefix); // Libera o prefixo, pois já foi copiado
+    free(prefix);
 
-    // --- FIM DA CORREÇÃO ---
+    // --- FIM DO GPT ---
 
-    unsigned char encrypted_payload[1024]; // O buffer de criptografia
+    unsigned char encrypted_payload[1024];
     int enc_len = aes_encrypt((unsigned char *)payload, strlen(payload), encrypted_payload);
 
-    // 4. Libere o payload de texto plano assim que for criptografado
     free(payload);
 
-    // Cuidado aqui: se enc_len for > 1045, você terá outro overflow.
-    // Vamos garantir que não estoure.
     if (enc_len > sizeof(encrypted_payload))
     {
-        // Isso não deve acontecer se aes_encrypt for chamado corretamente
         enc_len = sizeof(encrypted_payload);
     }
 
-    // Aumentei o tamanho do payload_with_flag para segurança
     size_t flag_payload_len = 4 + enc_len;
-    char *payload_with_flag_dynamic = malloc(flag_payload_len + 1); // +1 para o '\0'
-    if (!payload_with_flag_dynamic)
+    char *flaged_payload = malloc(flag_payload_len + 1);
+    if (!flaged_payload)
     {
-        perror("Erro ao alocar payload_with_flag");
+        perror("Erro ao alocar flaged_payload");
         return EXIT_FAILURE;
     }
 
-    memcpy(payload_with_flag_dynamic, "ENC:", 4);
-    memcpy(payload_with_flag_dynamic + 4, encrypted_payload, enc_len);
-    payload_with_flag_dynamic[flag_payload_len] = '\0'; // Não é estritamente necessário para payloadlen, mas é bom
+    memcpy(flaged_payload, "ENC:", 4);
+    memcpy(flaged_payload + 4, encrypted_payload, enc_len);
+    flaged_payload[flag_payload_len] = '\0';
 
-    pubmsg.payload = payload_with_flag_dynamic;
+    pubmsg.payload = flaged_payload;
     pubmsg.payloadlen = 4 + enc_len;
     pubmsg.qos = QOS;
     pubmsg.retained = 0;
@@ -736,11 +727,11 @@ int send_message(char msg[], char topic[])
         printf("Failed to start sendMessage, return code %d\n", rc);
         MQTTAsync_destroy(&client);
         free(ctx);
-        free(payload_with_flag_dynamic);
+        free(flaged_payload);
         return EXIT_FAILURE;
     }
 
-    free(payload_with_flag_dynamic);
+    free(flaged_payload);
 
     return EXIT_SUCCESS;
 }
