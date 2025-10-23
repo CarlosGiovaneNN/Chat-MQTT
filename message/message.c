@@ -304,9 +304,17 @@ void read_pending_messages_control()
 void control_msg()
 {
     int count = 1;
-    printf("\n");
 
     pthread_mutex_lock(&mutex_control);
+
+    if (control_messages == NULL)
+    {
+        printf("Nenhuma mensagem de controle pendente\n");
+        pthread_mutex_unlock(&mutex_control);
+        return;
+    }
+
+    printf("\n");
 
     for (Messages *message = control_messages; message != NULL; message = message->next)
     {
