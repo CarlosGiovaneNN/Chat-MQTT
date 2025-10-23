@@ -144,11 +144,11 @@ void add_group_by_message(char *message)
     pthread_mutex_lock(&mutex_groups);
     group->participants = NULL;
 
-    char *ptr = strstr(message, "Group:<");
+    char *ptr = strstr(message, "Group:");
     if (ptr)
     {
-        ptr += strlen("Group:<");
-        char *end = strstr(ptr, ">;");
+        ptr += strlen("Group:");
+        char *end = strstr(ptr, ";");
         if (end)
         {
             while (end > ptr && isspace(*(end - 1)))
@@ -159,11 +159,11 @@ void add_group_by_message(char *message)
         }
     }
 
-    ptr = strstr(message, "Leader:<");
+    ptr = strstr(message, "Leader:");
     if (ptr)
     {
-        ptr += strlen("Leader:<");
-        char *end = strstr(ptr, ">;");
+        ptr += strlen("Leader:");
+        char *end = strstr(ptr, ";");
         if (end)
         {
             while (end > ptr && isspace(*(end - 1)))
@@ -214,10 +214,10 @@ void add_group_by_message(char *message)
 void create_group_message()
 {
     char group_name[254];
-    snprintf(group_name, sizeof(group_name), "Group:<%s>;", groups->name);
+    snprintf(group_name, sizeof(group_name), "Group:%s;", groups->name);
 
     char leader[254];
-    snprintf(leader, sizeof(leader), "Leader:<%s>;Participants:", groups->leader);
+    snprintf(leader, sizeof(leader), "Leader:%s;Participants:", groups->leader);
 
     char participants[1024] = "[";
     for (Participant *p = groups->participants; p != NULL; p = p->next)

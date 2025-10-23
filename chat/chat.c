@@ -461,6 +461,7 @@ void subscribe_all_chats()
 
     while (current_chat != NULL)
     {
+        printf("Subscribing to chat: %s\n", current_chat->topic);
         subscribe_topic(current_chat->topic);
         current_chat = current_chat->next;
     }

@@ -426,13 +426,13 @@ void control_msg()
 // AO RECEBER MENSAGEM DE QUALQUER TOPICO
 void on_recv_message(MQTTAsync_message *message, char *topic)
 {
-    char from[100], date[100], msg[100];
+    char from[100] = {0}, date[100] = {0}, msg[100] = {0};
     parse_message((char *)message->payload, from, date, msg);
 
     if (strlen(from) == 0 || strlen(date) == 0 || strlen(msg) == 0)
         return;
 
-    char id_control[100];
+    char id_control[100] = {0};
     sprintf(id_control, "%s_CONTROL", user_id);
 
     if (strcmp(topic, "USERS") == 0)
@@ -453,6 +453,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     }
     else if (strcmp(topic, "GROUPS") == 0)
     {
+        printf("%s\n", (char *)message->payload);
 
         if (strcmp(user_id, from) == 0)
         {
@@ -461,13 +462,14 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
         if (strncmp(msg, "Group:", 6) == 0)
         {
+            printf("s\n");
             add_group_by_message(msg);
         }
         else
         {
             int option;
-            char new_msg[256];
-            char group_name[128];
+            char new_msg[256] = {0};
+            char group_name[128] = {0};
 
             sscanf(msg, "%d;", &option);
 
@@ -521,7 +523,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
             return;
 
         int option;
-        char new_msg[256];
+        char new_msg[256] = {0};
 
         sscanf(msg, "%d;", &option);
 
@@ -543,8 +545,8 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
             sprintf(new_msg, "%s aceitou o convite para o chat", from);
             add_unread_message(topic, from, new_msg, date);
 
-            char topic[128];
-            char new_chat[100];
+            char topic[128] = {0};
+            char new_chat[100] = {0};
 
             strcpy(new_chat, create_chat(from, 0));
 
@@ -561,8 +563,10 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
         }
         else if (option == IDCONTROL_GROUP_ASK_TO_JOIN)
         {
-            char group_name[100];
+            char group_name[100] = {0};
+            printf("Group name: antes\n");
             sscanf(msg, "%d;%[^;];", &option, group_name);
+            printf("Group name: %s\n", group_name);
 
             sprintf(new_msg, "Pede permissao para entrar no grupo: %s", group_name);
 
@@ -653,7 +657,7 @@ int send_message(char msg[], char topic[])
     MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
     int rc;
 
-    char payload[512];
+    char payload[512] = {0};
     char *prefix = format_message();
     if (!prefix)
         return EXIT_FAILURE;
@@ -662,10 +666,10 @@ int send_message(char msg[], char topic[])
     free(prefix);
     strcat(payload, msg);
 
-    unsigned char encrypted_payload[1024];
+    unsigned char encrypted_payload[1024] = {0};
     int enc_len = aes_encrypt((unsigned char *)payload, strlen(payload), encrypted_payload);
 
-    char payload_with_flag[1050];
+    char payload_with_flag[1050] = {0};
     sprintf(payload_with_flag, "ENC:%.*s", enc_len, encrypted_payload);
 
     pubmsg.payload = payload_with_flag;

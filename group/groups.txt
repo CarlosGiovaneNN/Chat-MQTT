@@ -1,6 +1,34 @@
 Group: teste
-Leader: user
+Leader: luigitestete
 Participants:
-- user1 (pending)
-- user2 (active)
-- user5 (active)
+- luigiteste (pending)
+- luigi (pending)
+- carlos (pending)
+- luigiessemsm (active)
+
+Group: asnfja
+Leader: luigitestete
+Participants:
+- luigi (pending)
+- carlos (pending)
+
+Group: a
+Leader: luigitestete
+Participants:
+- luigiessemsm (pending)
+- luigiteste (pending)
+- luigi (pending)
+
+Group: testeasf
+Leader: luigitestete
+Participants:
+- luigiessemsm (pending)
+- luigiteste (pending)
+
+Group: testegrupo
+Leader: luigitestete
+Participants:
+- luigi (pending)
+- carlos (pending)
+- luigiessemsm (active)
+

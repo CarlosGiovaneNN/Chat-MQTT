@@ -92,7 +92,7 @@ int msgarrvd(void *context, char *topic_name, int topicLen, MQTTAsync_message *m
         return 1;
     }
 
-    unsigned char decrypted[1024];
+    unsigned char decrypted[1024] = {0};
 
     int decrypted_len = aes_decrypt((unsigned char *)message->payload + 4, message->payloadlen - 4, decrypted);
 
