@@ -533,7 +533,7 @@ int toggle_participant_status_file(Group *group, char *username)
                 return 0;
             }
 
-            FILE *out = fopen("tmp.txt", "w");
+            FILE *out = fopen("tmpGpStatus.txt", "w");
             if (!out)
             {
                 pthread_mutex_unlock(&mutex_groups);
@@ -583,7 +583,7 @@ int toggle_participant_status_file(Group *group, char *username)
             fclose(out);
 
             remove(FILE_GROUPS);
-            rename("tmp.txt", FILE_GROUPS);
+            rename("tmpGpStatus.txt", FILE_GROUPS);
 
             pthread_mutex_unlock(&mutex_groups);
 
@@ -600,7 +600,6 @@ int toggle_participant_status_file(Group *group, char *username)
 // ADICIONA PARTICIPANTE AO GRUPO NO ARQUIVO - RETORNA 1 SE O PARTICIPANTE FOI ADICIONADO
 int add_participant_to_group_file(char *group_name, char *username, Group *group, int pending)
 {
-    // todo
     FILE *in = fopen(FILE_GROUPS, "r");
     if (!in)
     {
@@ -608,52 +607,62 @@ int add_participant_to_group_file(char *group_name, char *username, Group *group
         return 0;
     }
 
-    FILE *out = fopen("tmp.txt", "w");
+    FILE *out = fopen("tmpGroup.txt", "w");
     if (!out)
     {
-        perror("Erro ao criar tmp.txt");
+        perror("Erro ao criar tmpGroup.txt");
         fclose(in);
         return 0;
     }
 
     char line[256];
-    int inside_group = 0;
+    int inside_target_group = 0;
+    int user_added = 0;
     int group_found = 0;
+    int found_participants_line = 0;
 
     while (fgets(line, sizeof(line), in))
     {
-        fputs(line, out);
-
         if (strncmp(line, "Group: ", 7) == 0)
         {
+            if (inside_target_group && !user_added)
+            {
+                fprintf(out, "- %s (%s)\n", username, pending ? "pending" : "active");
+                user_added = 1;
+            }
+
+            inside_target_group = 0;
+            found_participants_line = 0;
+
             char current_group[100];
             sscanf(line + 7, "%[^\n]", current_group);
-
             if (strcmp(current_group, group_name) == 0)
             {
-                inside_group = 1;
+                inside_target_group = 1;
                 group_found = 1;
             }
-            else
+        }
+        else if (inside_target_group && strncmp(line, "Participants:", 12) == 0)
+        {
+            found_participants_line = 1;
+        }
+        else if (inside_target_group && found_participants_line && strncmp(line, "- ", 2) != 0)
+        {
+            if (!user_added)
             {
-                inside_group = 0;
+                fprintf(out, "- %s (%s)\n", username, pending ? "pending" : "active");
+                user_added = 1;
             }
+            found_participants_line = 0;
         }
 
-        if (inside_group && strncmp(line, "Participants:", 12) == 0)
-        {
-            // DO NOTHING
-        }
-        else if (inside_group && strncmp(line, "Group: ", 7) == 0)
-        {
-            fprintf(out, "- %s (%s)\n", username, pending ? "pending" : "active");
-            inside_group = 0;
-        }
+        fputs(line, out);
     }
 
-    if (inside_group)
+    if (inside_target_group && !user_added)
     {
         fprintf(out, "- %s (%s)\n", username, pending ? "pending" : "active");
+        user_added = 1;
     }
 
     fclose(in);
@@ -662,7 +671,7 @@ int add_participant_to_group_file(char *group_name, char *username, Group *group
     add_participant(group, username, pending);
 
     remove(FILE_GROUPS);
-    rename("tmp.txt", FILE_GROUPS);
+    rename("tmpGroup.txt", FILE_GROUPS);
 
     return group_found;
 }
@@ -677,10 +686,10 @@ int remove_participant_from_group_file(char *group_name, char *username)
         return 0;
     }
 
-    FILE *out = fopen("tmp.txt", "w");
+    FILE *out = fopen("tmpGroupRemovePartc.txt", "w");
     if (!out)
     {
-        perror("Erro ao criar tmp.txt");
+        perror("Erro ao criar tmpGroupRemovePartc.txt");
         fclose(in);
         return 0;
     }
@@ -725,7 +734,7 @@ int remove_participant_from_group_file(char *group_name, char *username)
     fclose(out);
 
     remove(FILE_GROUPS);
-    rename("tmp.txt", FILE_GROUPS);
+    rename("tmpGroupRemovePartc.txt", FILE_GROUPS);
 
     return group_found;
 }
