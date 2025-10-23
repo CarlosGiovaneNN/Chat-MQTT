@@ -9,7 +9,7 @@ void load_users_from_file();
 
 void add_user(char username[]);
 
-void change_status(char username[], int status);
+void change_status(char username[], int status, char lastSeen[]);
 void update_user_id(char id[]);
 
 int check_status(char *msg);

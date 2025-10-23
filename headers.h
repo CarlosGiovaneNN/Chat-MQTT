@@ -80,6 +80,7 @@ typedef struct Users
 {
     char username[100];
     int online;
+    char last_seen[100];
     struct Users *next;
 } Users;
 

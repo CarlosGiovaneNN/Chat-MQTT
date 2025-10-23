@@ -429,7 +429,6 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
     if (strcmp(topic, "USERS") == 0)
     {
-
         if (strcmp(user_id, from) == 0)
             return;
 
@@ -437,11 +436,11 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
         if (check_status(msg) == 1)
         {
-            change_status(from, 1);
+            change_status(from, 1, date);
         }
         else if (check_status(msg) == 0)
         {
-            change_status(from, 0);
+            change_status(from, 0, NULL);
         }
     }
     else if (strcmp(topic, "GROUPS") == 0)

@@ -472,7 +472,7 @@ void join_group_menu()
 
         if (!is_member)
         {
-            printf(" %d - %s\n", count, current_group->name);
+            printf("  %d - %s\n", count, current_group->name);
             count++;
         }
 
@@ -484,7 +484,7 @@ void join_group_menu()
         printf("Nenhum grupo disponível.\n");
     }
 
-    printf("0 - Voltar\n");
+    printf("\n0 - Voltar\n");
     printf("-------------------------------\n");
     printf("\nSelecione o número do grupo que deseja entrar:\n");
 

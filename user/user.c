@@ -7,7 +7,7 @@ void print_users();
 void load_users_from_file();
 void save_user_to_file(char *username);
 void add_user(char username[]);
-void change_status(char username[], int status);
+void change_status(char username[], int status, char lastSeen[]);
 void list_users();
 void update_user_id(char id[]);
 
@@ -104,7 +104,7 @@ void add_user(char username[])
 }
 
 // MUDA DE STATUS O USER ( ONLINE / OFFLINE )
-void change_status(char username[], int status)
+void change_status(char username[], int status, char last_seen[])
 {
     pthread_mutex_lock(&mutex_users);
 
@@ -115,6 +115,7 @@ void change_status(char username[], int status)
         if (strcmp(current->username, username) == 0)
         {
             current->online = status;
+            strcpy(current->last_seen, last_seen);
 
             pthread_mutex_unlock(&mutex_users);
 
