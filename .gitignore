@@ -1,0 +1,26 @@
+# Ignora o executável final
+main
+
+# Ignora o Makefile
+Makefile
+
+# Ignora todos os arquivos de objeto (.o) em todas as pastas
+*.o
+client/*.o
+message/*.o
+shell/*.o
+user/*.o
+group/*.o
+threads/*.o
+chat/*.o
+AES/*.o
+
+# Ignora os arquivos de dados .txt específicos
+user/users.txt
+group/groups.txt
+chat/chat.txt
+
+# Ignora arquivos de sistema e backup
+.DS_Store
+*~
+*.swp
