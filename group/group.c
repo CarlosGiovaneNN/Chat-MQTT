@@ -249,10 +249,19 @@ void create_group_menu()
         return;
 
     pthread_mutex_lock(&mutex_groups);
+    pthread_mutex_lock(&mutex_users);
 
     group_name[strcspn(group_name, "\n")] = 0;
 
-    create_group(group_name, user_id);
+    if (get_group_by_name(group_name))
+    {
+        printf("\nO grupo %s ja existe\n\n", group_name);
+
+        pthread_mutex_unlock(&mutex_groups);
+        pthread_mutex_unlock(&mutex_users);
+
+        return;
+    }
 
     printf("\nDigite o numero dos participantes(de enter para cancelar): ");
     printf("\nSepare-os por espaços (ex: 1 2 3)\n");
@@ -264,11 +273,10 @@ void create_group_menu()
         printf("Nenhum usuario encontrado\n\n\n");
 
         pthread_mutex_unlock(&mutex_groups);
+        pthread_mutex_unlock(&mutex_users);
 
         return;
     }
-
-    pthread_mutex_lock(&mutex_users);
 
     for (Users *current = users; current != NULL; current = current->next)
     {
@@ -277,7 +285,21 @@ void create_group_menu()
     }
 
     char line[256];
-    if (!fgets(line, sizeof(line), stdin))
+    if (fgets(line, sizeof(line), stdin) == NULL)
+    {
+        pthread_mutex_unlock(&mutex_groups);
+        pthread_mutex_unlock(&mutex_users);
+        return;
+    }
+
+    line[strcspn(line, "\n")] = 0;
+
+    const char *caracteres_permitidos = "0123456789 ";
+
+    size_t len_permitida = strspn(line, caracteres_permitidos);
+    size_t len_total = strlen(line);
+
+    if (len_permitida != len_total)
     {
         pthread_mutex_unlock(&mutex_groups);
         pthread_mutex_unlock(&mutex_users);
@@ -285,14 +307,14 @@ void create_group_menu()
         return;
     }
 
-    line[strcspn(line, "\n")] = 0;
+    create_group(group_name, user_id);
 
     char *token = strtok(line, " ");
     while (token != NULL)
     {
         int index = atoi(token);
 
-        printf("Você escolheu o usuário de índice: %d\n", index);
+        // printf("Você escolheu o usuário de índice: %d\n", index);
 
         if (index < 0 || index >= participant_number)
         {
@@ -305,7 +327,7 @@ void create_group_menu()
 
         Users *participant = get_user_by_index(index);
 
-        printf("Usuário escolhido: %s\n", participant->username);
+        // printf("Usuário escolhido: %s\n", participant->username);
 
         if (participant)
         {
