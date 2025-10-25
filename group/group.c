@@ -253,6 +253,44 @@ void create_group_menu()
 
     group_name[strcspn(group_name, "\n")] = 0;
 
+    if (strlen(group_name) == 0)
+    {
+        printf("Erro: O nome do grupo não pode ser vazio.\n");
+        return;
+    }
+
+    for (int i = 0; group_name[i] != '\0'; i++)
+    {
+        if (group_name[i] == ' ')
+        {
+            group_name[i] = '_';
+        }
+    }
+
+    char *prohibited_chars = ";:[]";
+    if (strpbrk(group_name, prohibited_chars) != NULL)
+    {
+        printf("Erro: O nome do grupo não pode conter os caracteres ';', ':', '[', ']'.\n");
+        return;
+    }
+
+    char *prohibited_words[] = {
+        "group",
+        "leader",
+        "participant",
+    };
+
+    int num_prohibited = sizeof(prohibited_words) / sizeof(prohibited_words[0]);
+
+    for (int i = 0; i < num_prohibited; i++)
+    {
+        if (strcasecmp(group_name, prohibited_words[i]) == 0)
+        {
+            printf("Erro: '%s' é um nome de grupo proibido.\n", prohibited_words[i]);
+            return;
+        }
+    }
+
     if (get_group_by_name(group_name))
     {
         printf("\nO grupo %s ja existe\n\n", group_name);
