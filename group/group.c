@@ -301,7 +301,7 @@ void create_group_menu()
         return;
     }
 
-    printf("\nDigite o numero dos participantes(de enter para cancelar): ");
+    printf("\nDigite o numero dos participantes (Digite qualquer tecla para cancelar - menos numero): ");
     printf("\nSepare-os por espaços (ex: 1 2 3)\n");
 
     int participant_number = 0;
