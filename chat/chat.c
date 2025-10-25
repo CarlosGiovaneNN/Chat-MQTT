@@ -148,8 +148,6 @@ void load_chats_from_file()
         strncpy(chat->topic, (char *)line, sizeof(chat->topic) - 1);
         chat->topic[sizeof(chat->topic) - 1] = '\0';
 
-        // printf("Chat: %s\n", chat->topic);
-
         strncpy(chat->to, other, sizeof(chat->to) - 1);
         chat->to[sizeof(chat->to) - 1] = '\0';
 
@@ -248,17 +246,18 @@ void show_chat_menu()
     MenuItem selected = items[choice];
     if (selected.type == ITEM_USER)
     {
-        printf("%d\n", 1);
         Users *u = (Users *)selected.ptr;
 
         if (find_chat(u->username, 0) == NULL)
         {
-            printf("%d\n", 2);
             char new_message[256];
             char topic[256];
+
             sprintf(new_message, "%d;", IDCONTROL_CHAT_INVITATION);
             sprintf(topic, "%s_CONTROL", u->username);
+
             send_message(new_message, topic);
+
             printf("Pedido para iniciar chat enviado para %s\n", u->username);
 
             pthread_mutex_unlock(&mutex_users);
@@ -268,7 +267,6 @@ void show_chat_menu()
         }
         else
         {
-            printf("%d\n", 3);
             printf("Você entrou no chat privado com: %s\n", u->username);
 
             strcpy(selected_chat, find_chat(u->username, 0)->topic);
@@ -292,11 +290,9 @@ void show_chat_menu()
 void load_chat()
 {
 
-    // system("clear");
+    system("clear");
 
     char buffer[256];
-
-    // printf("%s", selected_chat);
 
     while (1)
     {
@@ -306,7 +302,7 @@ void load_chat()
 
         buffer[strcspn(buffer, "\n")] = '\0';
 
-        printf("%s\n", buffer);
+        // printf("%s\n", buffer);
 
         if (strcmp(buffer, "/quit") == 0)
             break;
@@ -354,6 +350,7 @@ void show_group_participants(Chat *chat)
     {
         pthread_mutex_unlock(&mutex_groups);
         pthread_mutex_unlock(&mutex_chats);
+
         return;
     }
 
@@ -461,7 +458,6 @@ void subscribe_all_chats()
 
     while (current_chat != NULL)
     {
-        printf("Subscribing to chat: %s\n", current_chat->topic);
         subscribe_topic(current_chat->topic);
         current_chat = current_chat->next;
     }
@@ -501,8 +497,6 @@ int add_private_chat(char *name, char *topic)
     chat->next = chats;
     chats = chat;
 
-    printf("Chat priva! %s\n", chat->topic);
-
     subscribe_topic(chat->topic);
 
     pthread_mutex_unlock(&mutex_chats);
@@ -533,7 +527,6 @@ char *create_chat(char *name, int is_group)
 
     if (is_group)
     {
-        // printf("Grupos disponíveis:\n");
 
         Group *g = get_group_by_name(name);
         if (g)
@@ -546,7 +539,6 @@ char *create_chat(char *name, int is_group)
     }
     else
     {
-        // printf("Usuários disponíveis:\n");
         chat->participants = NULL;
 
         FILE *file = fopen(FILE_CHATS, "a");
@@ -570,7 +562,6 @@ char *create_chat(char *name, int is_group)
         fclose(file);
 
         subscribe_topic(chat->topic);
-        // printf("Chat criado com sucesso! %s\n", chat->topic);
     }
 
     pthread_mutex_unlock(&mutex_chats);

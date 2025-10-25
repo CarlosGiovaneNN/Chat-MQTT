@@ -78,7 +78,7 @@ void on_subscribe(void *context, MQTTAsync_successData *response)
 // AO FALHAR A INSCRICAO
 void on_subscribe_failure(void *context, MQTTAsync_failureData *response)
 {
-    printf("Subscribe failed, rc %d\n", response->code);
+    // printf("Subscribe failed, rc %d\n", response->code);
 }
 
 // AO RECEBER UMA MENSAGEM
@@ -119,8 +119,6 @@ int subscribe_topic(char *topic)
     opts.context = client;
 
     int rc;
-
-    // printf("Subscribing to topic %s\n", topic);
 
     if ((rc = MQTTAsync_subscribe(client, topic, QOS, &opts)) != MQTTASYNC_SUCCESS)
     {

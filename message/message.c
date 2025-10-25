@@ -35,23 +35,23 @@ int compare_time(char time1_str[], double limit_time);
 
 Messages *get_control_message(int index);
 
-// NAO ALTEREI AINDA
+// NAO ALTERADO
 void on_send(void *context, MQTTAsync_successData *response)
 {
     Send_Context *ctx = (Send_Context *)context;
 
-    if (strcmp(ctx->topic, "USERS") != 0)
-        // printf("Message delivered successfully\n");
+    // if (strcmp(ctx->topic, "USERS") != 0)
+    //  printf("Message delivered successfully\n");
 
-        free(ctx);
+    free(ctx);
 }
 
-// NAO ALTEREI AINDA
+// NAO ALTERADO
 void on_send_failure(void *context, MQTTAsync_failureData *response)
 {
     Send_Context *ctx = (Send_Context *)context;
 
-    printf("Failed to deliver message, rc %d\n", response->code);
+    // printf("Failed to deliver message, rc %d\n", response->code);
 
     free(ctx);
 }
@@ -427,7 +427,7 @@ void control_msg()
 // AO RECEBER MENSAGEM DE QUALQUER TOPICO
 void on_recv_message(MQTTAsync_message *message, char *topic)
 {
-    printf("%s\n", (char *)message->payload);
+    // printf("%s\n", (char *)message->payload);
     char from[100] = {0}, date[100] = {0}, msg[100] = {0};
     parse_message((char *)message->payload, from, date, msg);
 
@@ -438,8 +438,6 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     {
         return;
     }
-
-    printf("Passou\n");
 
     char id_control[100] = {0};
     sprintf(id_control, "%s_CONTROL", user_id);
@@ -462,7 +460,6 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
     }
     else if (strcmp(topic, "GROUPS") == 0)
     {
-        // printf("%s\n", (char *)message->payload);
 
         if (strcmp(user_id, from) == 0)
         {
@@ -676,7 +673,7 @@ int send_message(char msg[], char topic[])
     if (!payload)
     {
         free(prefix);
-        perror("Erro ao alocar payload para send_message");
+        // printf("Erro ao alocar payload para send_message \n");
         return EXIT_FAILURE;
     }
 
@@ -701,7 +698,7 @@ int send_message(char msg[], char topic[])
     char *flaged_payload = malloc(flag_payload_len + 1);
     if (!flaged_payload)
     {
-        perror("Erro ao alocar flaged_payload");
+        // printf("Erro ao alocar flaged_payload\n");
         return EXIT_FAILURE;
     }
 
