@@ -569,9 +569,7 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
         else if (option == IDCONTROL_GROUP_ASK_TO_JOIN)
         {
             char group_name[100] = {0};
-            printf("Group name: antes\n");
             sscanf(msg, "%d;%[^;];", &option, group_name);
-            printf("Group name: %s\n", group_name);
 
             sprintf(new_msg, "Pede permissao para entrar no grupo: %s", group_name);
 
