@@ -256,6 +256,10 @@ void create_group_menu()
     if (strlen(group_name) == 0)
     {
         printf("Erro: O nome do grupo não pode ser vazio.\n");
+
+        pthread_mutex_unlock(&mutex_users);
+        pthread_mutex_unlock(&mutex_groups);
+
         return;
     }
 
@@ -271,6 +275,10 @@ void create_group_menu()
     if (strpbrk(group_name, prohibited_chars) != NULL)
     {
         printf("Erro: O nome do grupo não pode conter os caracteres ';', ':', '[', ']'.\n");
+
+        pthread_mutex_unlock(&mutex_users);
+        pthread_mutex_unlock(&mutex_groups);
+
         return;
     }
 
@@ -287,6 +295,10 @@ void create_group_menu()
         if (strcasecmp(group_name, prohibited_words[i]) == 0)
         {
             printf("Erro: '%s' é um nome de grupo proibido.\n", prohibited_words[i]);
+
+            pthread_mutex_unlock(&mutex_users);
+            pthread_mutex_unlock(&mutex_groups);
+
             return;
         }
     }
@@ -295,8 +307,8 @@ void create_group_menu()
     {
         printf("\nO grupo %s ja existe\n\n", group_name);
 
-        pthread_mutex_unlock(&mutex_groups);
         pthread_mutex_unlock(&mutex_users);
+        pthread_mutex_unlock(&mutex_groups);
 
         return;
     }
@@ -310,8 +322,8 @@ void create_group_menu()
     {
         printf("Nenhum usuario encontrado\n\n\n");
 
-        pthread_mutex_unlock(&mutex_groups);
         pthread_mutex_unlock(&mutex_users);
+        pthread_mutex_unlock(&mutex_groups);
 
         return;
     }
@@ -325,8 +337,9 @@ void create_group_menu()
     char line[256];
     if (fgets(line, sizeof(line), stdin) == NULL)
     {
-        pthread_mutex_unlock(&mutex_groups);
         pthread_mutex_unlock(&mutex_users);
+        pthread_mutex_unlock(&mutex_groups);
+
         return;
     }
 
@@ -339,13 +352,17 @@ void create_group_menu()
 
     if (len_permitida != len_total)
     {
-        pthread_mutex_unlock(&mutex_groups);
         pthread_mutex_unlock(&mutex_users);
+        pthread_mutex_unlock(&mutex_groups);
 
         return;
     }
 
+    printf("ficou aqui\n");
+
     create_group(group_name, user_id);
+
+    printf("possou aqui\n");
 
     char *token = strtok(line, " ");
     while (token != NULL)
@@ -356,8 +373,8 @@ void create_group_menu()
 
         if (index < 0 || index >= participant_number)
         {
-            pthread_mutex_unlock(&mutex_groups);
             pthread_mutex_unlock(&mutex_users);
+            pthread_mutex_unlock(&mutex_groups);
 
             printf("Indice invalido\n");
             return;
@@ -373,8 +390,8 @@ void create_group_menu()
 
             if (!new_group)
             {
-                pthread_mutex_unlock(&mutex_groups);
                 pthread_mutex_unlock(&mutex_users);
+                pthread_mutex_unlock(&mutex_groups);
 
                 return;
             }
@@ -619,12 +636,10 @@ int toggle_participant_status_file(Group *group, char *username)
                         {
                             if (strcmp(status, "pending") == 0)
                             {
-                                printf("TROCOU PARA ATIVO\n");
                                 fprintf(out, "- %s (active)\n", username);
                             }
                             else if (strcmp(status, "active") == 0)
                             {
-                                printf("TROCOU PARA PENDENTE\n");
                                 fprintf(out, "- %s (pending)\n", username);
                             }
                             else
@@ -814,10 +829,13 @@ int remove_participant_from_group(Group *group, char *username)
                 prev->next = p->next;
             else
                 group->participants = p->next;
+
             free(p);
             pthread_mutex_unlock(&mutex_groups);
+
             return 1;
         }
+
         prev = p;
         p = p->next;
     }

@@ -145,8 +145,11 @@ void remove_control_message(int index)
     {
         Messages *aux = control_messages;
         control_messages = control_messages->next;
+
         free(aux);
+
         pthread_mutex_unlock(&mutex_control);
+
         return;
     }
 
@@ -159,8 +162,11 @@ void remove_control_message(int index)
         {
             if (prev)
                 prev->next = cur->next;
+
             free(cur);
+
             pthread_mutex_unlock(&mutex_control);
+
             return;
         }
         prev = cur;
@@ -282,6 +288,7 @@ void read_pending_messages_control()
                     found = 1;
                     break;
                 }
+
                 msg_node = msg_node->next;
             }
 
@@ -311,7 +318,9 @@ void control_msg()
     if (control_messages == NULL)
     {
         printf("Nenhuma mensagem de controle pendente\n");
+
         pthread_mutex_unlock(&mutex_control);
+
         return;
     }
 
@@ -336,7 +345,12 @@ void control_msg()
     fgets(buffer, sizeof(buffer), stdin);
 
     if (buffer[0] == '0')
+    {
+
+        pthread_mutex_unlock(&mutex_control);
+
         return;
+    }
 
     int index = atoi(buffer) - 1;
 
@@ -345,6 +359,9 @@ void control_msg()
     if (msg == NULL)
     {
         printf("Mensagem não encontrada\n");
+
+        pthread_mutex_unlock(&mutex_control);
+
         return;
     }
 

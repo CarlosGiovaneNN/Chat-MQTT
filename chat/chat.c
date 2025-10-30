@@ -32,8 +32,8 @@ Chat *find_chat_by_topic(char *topic);
 // CARREGA OS GRUPOS NO ARRAY DE CHAT
 void load_chats_by_groups()
 {
-    pthread_mutex_lock(&mutex_groups);
     pthread_mutex_lock(&mutex_chats);
+    pthread_mutex_lock(&mutex_groups);
 
     Group *group = groups;
     while (group != NULL)
@@ -98,8 +98,8 @@ void load_chats_by_groups()
         group = group->next;
     }
 
-    pthread_mutex_unlock(&mutex_chats);
     pthread_mutex_unlock(&mutex_groups);
+    pthread_mutex_unlock(&mutex_chats);
 }
 
 // CARREGA OS CHATS DO ARQUIVO - CRIPTOGRAFADO
@@ -173,8 +173,8 @@ void show_chat_menu()
 
     printf("[Conversas ativas]\n");
 
-    pthread_mutex_lock(&mutex_users);
     pthread_mutex_lock(&mutex_groups);
+    pthread_mutex_lock(&mutex_users);
 
     Users *current_user = users;
     while (current_user != NULL)
@@ -335,9 +335,9 @@ void load_messages(char *topic)
         return;
     }
 
-    print_all_msgs_from_chat(chat->topic);
-
     pthread_mutex_unlock(&mutex_chats);
+
+    print_all_msgs_from_chat(chat->topic);
 }
 
 // MOSTRA OS PARTICIPANTES DO GRUPO
@@ -519,8 +519,8 @@ char *create_chat(char *name, int is_group)
 
     chat->is_group = is_group;
 
-    pthread_mutex_lock(&mutex_groups);
     pthread_mutex_lock(&mutex_chats);
+    pthread_mutex_lock(&mutex_groups);
 
     chat->next = chats;
     chats = chat;
@@ -545,8 +545,8 @@ char *create_chat(char *name, int is_group)
         if (!file)
         {
 
-            pthread_mutex_unlock(&mutex_chats);
             pthread_mutex_unlock(&mutex_groups);
+            pthread_mutex_unlock(&mutex_chats);
 
             return NULL;
         }
@@ -564,8 +564,8 @@ char *create_chat(char *name, int is_group)
         subscribe_topic(chat->topic);
     }
 
-    pthread_mutex_unlock(&mutex_chats);
     pthread_mutex_unlock(&mutex_groups);
+    pthread_mutex_unlock(&mutex_chats);
 
     return chat->topic;
 }

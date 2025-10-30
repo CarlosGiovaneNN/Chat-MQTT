@@ -115,12 +115,15 @@ void change_status(char username[], int status, char last_seen[])
         if (strcmp(current->username, username) == 0)
         {
             current->online = status;
-            strcpy(current->last_seen, last_seen);
+
+            if (last_seen != NULL)
+                strcpy(current->last_seen, last_seen);
 
             pthread_mutex_unlock(&mutex_users);
 
             return;
         }
+
         current = current->next;
     }
 
@@ -229,6 +232,7 @@ int find_user(char username[])
         if (strcmp(current->username, username) == 0)
         {
             pthread_mutex_unlock(&mutex_users);
+
             return 1;
         }
         current = current->next;
