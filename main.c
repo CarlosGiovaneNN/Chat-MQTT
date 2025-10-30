@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2 || argc > 3)
+    if (argc != 2)
     {
         printf("Erro ao passar argumentos\n./main <username>\n");
         return EXIT_FAILURE;

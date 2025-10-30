@@ -8,15 +8,16 @@
 
 pthread_t thread_status, thread_shell;
 
-pthread_mutex_t mutex_unread = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_all_received = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_control = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_unread;
+pthread_mutex_t mutex_all_received;
 
-pthread_mutex_t mutex_groups = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_control;
 
-pthread_mutex_t mutex_users = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_chats;
 
-pthread_mutex_t mutex_chats = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_groups;
+
+pthread_mutex_t mutex_users;
 
 // INICIALIZA OS MUTEXES
 void init_mutexes()
@@ -24,7 +25,7 @@ void init_mutexes()
     pthread_mutexattr_t attr;
 
     pthread_mutexattr_init(&attr);
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 
     pthread_mutex_init(&mutex_unread, &attr);
     pthread_mutex_init(&mutex_all_received, &attr);
