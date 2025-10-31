@@ -390,29 +390,12 @@ void create_group_menu()
         return;
     }
 
-    //    printf("ficou aqui 1\n");
-
-    pthread_mutex_lock(&mutex_chats);
-
-    // printf("antes do lock no gruops 13\n");
-    pthread_mutex_lock(&mutex_groups);
-    // printf("depois do lock no gruops\n");
-
-    //  printf("ficou aqui 2\n");
-
     create_group(group_name, user_id);
-
-    // printf("antes do unlock no gruops\n");
-    pthread_mutex_unlock(&mutex_groups);
-    //  printf("depois do unlock no gruops 13\n");
-    pthread_mutex_unlock(&mutex_chats);
 
     // printf("antes do lock no gruops 14\n");
     pthread_mutex_lock(&mutex_groups);
     // printf("depois do lock no gruops\n");
     pthread_mutex_lock(&mutex_users);
-
-    // printf("possou aqui\n");
 
     char *token = strtok(line, " ");
     while (token != NULL)
@@ -469,13 +452,11 @@ void create_group_menu()
     save_group(get_group_by_name(group_name));
     printf("\nGrupo criado com sucesso!\n\n\n");
 
-    create_group_message(get_group_by_name(group_name));
-
     pthread_mutex_unlock(&mutex_users);
-
     //  printf("antes do unlock no gruops\n");
     pthread_mutex_unlock(&mutex_groups);
     //  printf("depois do unlock no gruops 14\n");
+    create_group_message(get_group_by_name(group_name));
 }
 
 // CARREGA OS GRUPOS DO ARQUIVO - x

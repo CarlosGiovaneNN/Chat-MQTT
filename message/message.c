@@ -361,11 +361,7 @@ void control_msg()
 
     int index = atoi(buffer) - 1;
 
-    pthread_mutex_lock(&mutex_control);
-
     Messages *msg = get_control_message(index);
-
-    pthread_mutex_unlock(&mutex_control);
 
     if (msg == NULL)
     {
@@ -428,15 +424,8 @@ void control_msg()
 
             remove_participant_from_group_file(group_name, user_id);
 
-            // printf("antes do lock no gruops 25\n");
-            pthread_mutex_lock(&mutex_groups);
-            // printf("depois do lock no gruops\n");
-
             remove_participant_from_group(get_group_by_name(group_name), user_id);
 
-            //  printf("antes do unlock no gruops\n");
-            pthread_mutex_unlock(&mutex_groups);
-            // printf("depois do unlock no gruops 25\n");
 
             send_message(message, "GROUPS");
         }
@@ -515,10 +504,6 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
 
                 add_unread_message(new_msg, topic, from, date);
 
-                // printf("antes do lock no gruops 26\n");
-                pthread_mutex_lock(&mutex_groups);
-                // printf("depois do lock no gruops\n");
-
                 Group *group = get_group_by_name(group_name);
 
                 if (get_participant_by_username(group, from) == NULL || fromAsk == 1)
@@ -529,10 +514,6 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
                 {
                     change_participant_status(group, from, 0);
                 }
-
-                // printf("antes do unlock no gruops\n");
-                pthread_mutex_unlock(&mutex_groups);
-                // printf("depois do unlock no gruops 26\n");
             }
             else if (option == GROUP_INVITATION_REJECTED)
             {
@@ -540,20 +521,12 @@ void on_recv_message(MQTTAsync_message *message, char *topic)
                 sprintf(new_msg, "Recusou o convite para o grupo: %s", group_name);
                 add_unread_message(topic, from, new_msg, date);
 
-                // printf("antes do lock no gruops 27\n");
-                pthread_mutex_lock(&mutex_groups);
-                // printf("depois do lock no gruops\n");
-
                 Group *group = get_group_by_name(group_name);
 
                 if (remove_participant_from_group(group, from) == 0)
                 {
                     printf("Erro ao remover participante do grupo\n");
                 }
-
-                // printf("antes do unlock no gruops\n");
-                pthread_mutex_unlock(&mutex_groups);
-                // printf("depois do unlock no gruops 27\n");
             }
         }
     }
