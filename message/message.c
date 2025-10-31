@@ -337,6 +337,8 @@ void control_msg()
         count++;
     }
 
+    pthread_mutex_unlock(&mutex_control);
+
     printf("0 - Voltar\n");
     printf("=======================================\n");
     printf("Selecione o número da mensagem que deseja responder:\n");
@@ -346,13 +348,12 @@ void control_msg()
 
     if (buffer[0] == '0')
     {
-
-        pthread_mutex_unlock(&mutex_control);
-
         return;
     }
 
     int index = atoi(buffer) - 1;
+
+    pthread_mutex_lock(&mutex_control);
 
     Messages *msg = get_control_message(index);
 

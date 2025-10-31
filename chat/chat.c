@@ -221,15 +221,15 @@ void show_chat_menu()
     printf("========================================================\n");
     printf("Selecione o número da conversa que deseja entrar: ");
 
+    pthread_mutex_unlock(&mutex_users);
+    pthread_mutex_unlock(&mutex_groups);
+
     char buffer[256];
     fgets(buffer, sizeof(buffer), stdin);
     int choice = atoi(buffer);
 
     if (choice == 0)
     {
-        pthread_mutex_unlock(&mutex_users);
-        pthread_mutex_unlock(&mutex_groups);
-
         return;
     }
 
@@ -237,11 +237,11 @@ void show_chat_menu()
     {
         printf("Índice inválido.\n");
 
-        pthread_mutex_unlock(&mutex_users);
-        pthread_mutex_unlock(&mutex_groups);
-
         return;
     }
+
+    pthread_mutex_lock(&mutex_users);
+    pthread_mutex_lock(&mutex_groups);
 
     MenuItem selected = items[choice];
     if (selected.type == ITEM_USER)
