@@ -240,8 +240,8 @@ void show_chat_menu()
         return;
     }
 
-    pthread_mutex_lock(&mutex_users);
     pthread_mutex_lock(&mutex_groups);
+    pthread_mutex_lock(&mutex_users);
 
     MenuItem selected = items[choice];
     if (selected.type == ITEM_USER)
