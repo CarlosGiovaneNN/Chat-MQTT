@@ -370,7 +370,12 @@ void create_group_menu()
 
     create_group(group_name, user_id);
 
+    pthread_mutex_unlock(&mutex_users);
+    pthread_mutex_unlock(&mutex_groups);
     pthread_mutex_unlock(&mutex_chats);
+
+    pthread_mutex_lock(&mutex_groups);
+    pthread_mutex_lock(&mutex_users);
 
     printf("possou aqui\n");
 
