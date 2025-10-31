@@ -25,7 +25,7 @@ void init_mutexes()
     pthread_mutexattr_t attr;
 
     pthread_mutexattr_init(&attr);
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
 
     pthread_mutex_init(&mutex_unread, &attr);
     pthread_mutex_init(&mutex_all_received, &attr);

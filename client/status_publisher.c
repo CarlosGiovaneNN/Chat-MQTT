@@ -25,7 +25,7 @@ void *run_status_publisher(void *arg)
     return NULL;
 }
 
-void verify_others_connection_status()
+void verify_others_connection_status() // - X
 {
     time_t now;
     time(&now);

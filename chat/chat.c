@@ -29,7 +29,7 @@ char *create_chat(char *name, int is_group);
 Chat *find_chat(char *name, int is_group);
 Chat *find_chat_by_topic(char *topic);
 
-// CARREGA OS GRUPOS NO ARRAY DE CHAT
+// CARREGA OS GRUPOS NO ARRAY DE CHAT - X
 void load_chats_by_groups()
 {
     pthread_mutex_lock(&mutex_chats);
@@ -102,7 +102,7 @@ void load_chats_by_groups()
     pthread_mutex_unlock(&mutex_chats);
 }
 
-// CARREGA OS CHATS DO ARQUIVO - CRIPTOGRAFADO
+// CARREGA OS CHATS DO ARQUIVO - X
 void load_chats_from_file()
 {
     FILE *file = fopen(FILE_CHATS, "r");
@@ -163,7 +163,7 @@ void load_chats_from_file()
     load_chats_by_groups();
 }
 
-// MOSTRA AS CONVERSAS DISPONIVEIS
+// MOSTRA AS CONVERSAS DISPONIVEIS - X
 void show_chat_menu()
 {
     MenuItem items[256];
@@ -286,7 +286,7 @@ void show_chat_menu()
     load_chat();
 }
 
-// CARREGA O CHAT PELA PRIMEIRA VEZ - FAZ A LIMPA NO CONSOLE - ESCUTA O USUARIO
+// CARREGA O CHAT PELA PRIMEIRA VEZ - FAZ A LIMPA NO CONSOLE - ESCUTA O USUARIO - X
 void load_chat()
 {
 
@@ -320,7 +320,7 @@ void load_chat()
     strcpy(selected_chat, "");
 }
 
-// CARREGA AS MENSAGENS DO CHAT ( CHAMANDO A FUNCAO NO MESSAGES )
+// CARREGA AS MENSAGENS DO CHAT ( CHAMANDO A FUNCAO NO MESSAGES ) - X
 void load_messages(char *topic)
 {
     pthread_mutex_lock(&mutex_chats);
@@ -340,7 +340,7 @@ void load_messages(char *topic)
     print_all_msgs_from_chat(chat->topic);
 }
 
-// MOSTRA OS PARTICIPANTES DO GRUPO
+// MOSTRA OS PARTICIPANTES DO GRUPO - X
 void show_group_participants(Chat *chat)
 {
     pthread_mutex_lock(&mutex_chats);
@@ -395,7 +395,7 @@ void show_group_participants(Chat *chat)
     pthread_mutex_unlock(&mutex_chats);
 }
 
-// MOSTRA A BARRA DO CHAT COM O NOME DO GRUPO OU NOME DO USUARIO
+// MOSTRA A BARRA DO CHAT COM O NOME DO GRUPO OU NOME DO USUARIO - X
 void show_chat_topbar(char *topic)
 {
     pthread_mutex_lock(&mutex_chats);
@@ -431,25 +431,25 @@ void show_chat_topbar(char *topic)
     pthread_mutex_unlock(&mutex_chats);
 }
 
-// MOSTRA AS MENSAGENS DO USUARIO DO CHAT
+// MOSTRA AS MENSAGENS DO USUARIO DO CHAT - X
 void show_message_from_user(char *date, char *msg)
 {
     printf("[%s] Você: %s\n", date, msg);
 }
 
-// MOSTRA AS MENSAGENS DE OUTROS USUARIOS
+// MOSTRA AS MENSAGENS DE OUTROS USUARIOS - X
 void show_message_from_other(char *from, char *date, char *msg)
 {
     printf("[%s] %s: %s\n", date, from, msg);
 }
 
-// ATUALIZA O NOME DO CHAT SELECIONADO
+// ATUALIZA O NOME DO CHAT SELECIONADO - X
 void update_selected_chat(char *name)
 {
     strcpy(selected_chat, name);
 }
 
-// SE INSCREVE EM TODOS OS CHATS QUE O USUARIO PARTICIPA
+// SE INSCREVE EM TODOS OS CHATS QUE O USUARIO PARTICIPA - X
 void subscribe_all_chats()
 {
     pthread_mutex_lock(&mutex_chats);
@@ -465,7 +465,7 @@ void subscribe_all_chats()
     pthread_mutex_unlock(&mutex_chats);
 }
 
-// ADICIONA UM CHAT PRIVADO
+// ADICIONA UM CHAT PRIVADO - X
 int add_private_chat(char *name, char *topic)
 {
     pthread_mutex_lock(&mutex_chats);
@@ -504,7 +504,7 @@ int add_private_chat(char *name, char *topic)
     return 1;
 }
 
-// CRIA UM NOVO CHAT
+// CRIA UM NOVO CHAT - X
 char *create_chat(char *name, int is_group)
 {
     if (!name || strlen(name) == 0)
@@ -570,7 +570,7 @@ char *create_chat(char *name, int is_group)
     return chat->topic;
 }
 
-// ENCONTRA UM CHAT PELO NOME
+// ENCONTRA UM CHAT PELO NOME - X
 Chat *find_chat(char *name, int is_group)
 {
     pthread_mutex_lock(&mutex_chats);
@@ -592,7 +592,7 @@ Chat *find_chat(char *name, int is_group)
     return NULL;
 }
 
-// ENCONTRA UM CHAT PELO TOPIC
+// ENCONTRA UM CHAT PELO TOPIC - X
 Chat *find_chat_by_topic(char *topic)
 {
     pthread_mutex_lock(&mutex_chats);

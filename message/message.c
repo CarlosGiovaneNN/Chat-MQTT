@@ -259,8 +259,8 @@ void print_unread_messages()
 */
 void read_pending_messages_control()
 {
-    pthread_mutex_lock(&mutex_groups);
     pthread_mutex_lock(&mutex_control);
+    pthread_mutex_lock(&mutex_groups);
 
     Group *current_group = groups;
 
@@ -304,8 +304,8 @@ void read_pending_messages_control()
         current_group = current_group->next;
     }
 
-    pthread_mutex_unlock(&mutex_control);
     pthread_mutex_unlock(&mutex_groups);
+    pthread_mutex_unlock(&mutex_control);
 }
 
 // LISTA MENSAGENS DE CONTROLE E PERGUNTA QUAL DESEJA RESPONDER

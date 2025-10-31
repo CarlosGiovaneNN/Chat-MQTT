@@ -27,7 +27,7 @@ Group *get_group_by_name(char *group_name);
 
 Participant *get_participant_by_username(Group *group, char *username);
 
-// CRIA UM NOVO GRUPO E JA ADICIONA AO CHAT
+// CRIA UM NOVO GRUPO E JA ADICIONA AO CHAT - X
 void create_group(char *group_name, char *leader)
 {
     Group *new_group = malloc(sizeof(Group));
@@ -39,7 +39,12 @@ void create_group(char *group_name, char *leader)
     strcpy(new_group->leader, leader);
     new_group->participants = NULL;
 
+    printf("ficou aqui 3\n");
+
+    // LOCK Q ACONTECE O LOCK
     pthread_mutex_lock(&mutex_groups);
+
+    printf("ficou aqui 4\n");
 
     new_group->next = groups;
     groups = new_group;
@@ -49,7 +54,7 @@ void create_group(char *group_name, char *leader)
     create_chat(group_name, 1);
 }
 
-// ADICIONA UM PARTICIPANTE AO GRUPO
+// ADICIONA UM PARTICIPANTE AO GRUPO - X
 void add_participant(Group *group, char *username, int pending)
 {
     Participant *p = malloc(sizeof(Participant));
@@ -84,7 +89,7 @@ void add_participant(Group *group, char *username, int pending)
     pthread_mutex_unlock(&mutex_groups);
 }
 
-// SALVA O GRUPO NO ARQUIVO
+// SALVA O GRUPO NO ARQUIVO - X
 void save_group(Group *g)
 {
     FILE *f = fopen(FILE_GROUPS, "a");
@@ -109,7 +114,7 @@ void save_group(Group *g)
     fclose(f);
 }
 
-// ALTERA O STATUS DO PARTICIPANTE
+// ALTERA O STATUS DO PARTICIPANTE - X
 void change_participant_status(Group *group, char *username, int pending)
 {
     pthread_mutex_lock(&mutex_groups);
@@ -334,12 +339,12 @@ void create_group_menu()
         participant_number++;
     }
 
+    pthread_mutex_unlock(&mutex_users);
+    pthread_mutex_unlock(&mutex_groups);
+
     char line[256];
     if (fgets(line, sizeof(line), stdin) == NULL)
     {
-        pthread_mutex_unlock(&mutex_users);
-        pthread_mutex_unlock(&mutex_groups);
-
         return;
     }
 
@@ -352,15 +357,20 @@ void create_group_menu()
 
     if (len_permitida != len_total)
     {
-        pthread_mutex_unlock(&mutex_users);
-        pthread_mutex_unlock(&mutex_groups);
-
         return;
     }
 
-    printf("ficou aqui\n");
+    printf("ficou aqui 1\n");
+
+    pthread_mutex_lock(&mutex_chats);
+    pthread_mutex_lock(&mutex_groups);
+    pthread_mutex_lock(&mutex_users);
+
+    printf("ficou aqui 2\n");
 
     create_group(group_name, user_id);
+
+    pthread_mutex_unlock(&mutex_chats);
 
     printf("possou aqui\n");
 
