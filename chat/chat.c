@@ -33,7 +33,10 @@ Chat *find_chat_by_topic(char *topic);
 void load_chats_by_groups()
 {
     pthread_mutex_lock(&mutex_chats);
+
+    // printf("antes do lock no gruops 1\n");
     pthread_mutex_lock(&mutex_groups);
+    // printf("depois do lock no gruops\n");
 
     Group *group = groups;
     while (group != NULL)
@@ -98,8 +101,10 @@ void load_chats_by_groups()
         group = group->next;
     }
 
+    // printf("antes do unlock no gruops\n");
     pthread_mutex_unlock(&mutex_groups);
     pthread_mutex_unlock(&mutex_chats);
+    // printf("depois do unlock no gruops 1\n");
 }
 
 // CARREGA OS CHATS DO ARQUIVO - X
@@ -157,8 +162,9 @@ void load_chats_from_file()
         chats = chat;
     }
 
-    fclose(file);
     pthread_mutex_unlock(&mutex_chats);
+
+    fclose(file);
 
     load_chats_by_groups();
 }
@@ -173,7 +179,9 @@ void show_chat_menu()
 
     printf("[Conversas ativas]\n");
 
+    // printf("antes do lock no gruops 2\n");
     pthread_mutex_lock(&mutex_groups);
+    //  printf("depois do lock no gruops\n");
     pthread_mutex_lock(&mutex_users);
 
     Users *current_user = users;
@@ -222,7 +230,10 @@ void show_chat_menu()
     printf("Selecione o número da conversa que deseja entrar: ");
 
     pthread_mutex_unlock(&mutex_users);
+
+    // printf("antes do unlock no gruops\n");
     pthread_mutex_unlock(&mutex_groups);
+    // printf("depois do unlock no gruops 2\n");
 
     char buffer[256];
     fgets(buffer, sizeof(buffer), stdin);
@@ -240,7 +251,9 @@ void show_chat_menu()
         return;
     }
 
+    // printf("antes do lock no gruops 3\n");
     pthread_mutex_lock(&mutex_groups);
+    // printf("depois do lock no gruops\n");
     pthread_mutex_lock(&mutex_users);
 
     MenuItem selected = items[choice];
@@ -261,7 +274,10 @@ void show_chat_menu()
             printf("Pedido para iniciar chat enviado para %s\n", u->username);
 
             pthread_mutex_unlock(&mutex_users);
+
+            // printf("antes do unlock no gruops\n");
             pthread_mutex_unlock(&mutex_groups);
+            // printf("depois do unlock no gruops 3\n");
 
             return;
         }
@@ -281,7 +297,10 @@ void show_chat_menu()
     }
 
     pthread_mutex_unlock(&mutex_users);
+
+    // printf("antes do unlock no gruops\n");
     pthread_mutex_unlock(&mutex_groups);
+    // printf("depois do unlock no gruops 3\n");
 
     load_chat();
 }
@@ -344,12 +363,18 @@ void load_messages(char *topic)
 void show_group_participants(Chat *chat)
 {
     pthread_mutex_lock(&mutex_chats);
+
+    // printf("antes do lock no gruops 4\n");
     pthread_mutex_lock(&mutex_groups);
+    // printf("depois do lock no gruops\n");
 
     if (!chat->is_group || !chat->participants)
     {
+
+        // printf("antes do unlock no gruops\n");
         pthread_mutex_unlock(&mutex_groups);
         pthread_mutex_unlock(&mutex_chats);
+        // printf("depois do unlock no gruops 4\n");
 
         return;
     }
@@ -391,8 +416,10 @@ void show_group_participants(Chat *chat)
         printf("─");
     printf("┘\n\n");
 
+    // printf("antes do unlock no gruops\n");
     pthread_mutex_unlock(&mutex_groups);
     pthread_mutex_unlock(&mutex_chats);
+    // printf("depois do unlock no gruops 4\n");
 }
 
 // MOSTRA A BARRA DO CHAT COM O NOME DO GRUPO OU NOME DO USUARIO - X
@@ -453,6 +480,7 @@ void update_selected_chat(char *name)
 void subscribe_all_chats()
 {
     pthread_mutex_lock(&mutex_chats);
+    printf("Subscribing to all chats...\n");
 
     Chat *current_chat = chats;
 
@@ -520,7 +548,6 @@ char *create_chat(char *name, int is_group)
     chat->is_group = is_group;
 
     pthread_mutex_lock(&mutex_chats);
-    pthread_mutex_lock(&mutex_groups);
 
     chat->next = chats;
     chats = chat;
@@ -528,13 +555,24 @@ char *create_chat(char *name, int is_group)
     if (is_group)
     {
 
+        // printf("antes do lock no gruops 5\n");
+        pthread_mutex_lock(&mutex_groups);
+        // printf("depois do lock no gruops\n");
+
         Group *g = get_group_by_name(name);
         if (g)
             chat->participants = g->participants;
         else
             chat->participants = NULL;
 
+        // printf("antes do unlock no gruops\n");
+        pthread_mutex_unlock(&mutex_groups);
+        // printf("depois do unlock no gruops 5\n");
+
         strcpy(chat->topic, name);
+
+        pthread_mutex_unlock(&mutex_chats);
+
         subscribe_topic(chat->topic);
     }
     else
@@ -544,8 +582,6 @@ char *create_chat(char *name, int is_group)
         FILE *file = fopen(FILE_CHATS, "a");
         if (!file)
         {
-
-            pthread_mutex_unlock(&mutex_groups);
             pthread_mutex_unlock(&mutex_chats);
 
             return NULL;
@@ -554,18 +590,19 @@ char *create_chat(char *name, int is_group)
         time_t now = time(NULL);
         struct tm *t = localtime(&now);
         char timestamp[64];
+
         strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", t);
 
         sprintf(chat->topic, "%s_%s_%s", user_id, name, timestamp);
 
+        pthread_mutex_unlock(&mutex_chats);
+
         fprintf(file, "%s\n", chat->topic);
+
         fclose(file);
 
         subscribe_topic(chat->topic);
     }
-
-    pthread_mutex_unlock(&mutex_groups);
-    pthread_mutex_unlock(&mutex_chats);
 
     return chat->topic;
 }

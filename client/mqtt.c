@@ -122,7 +122,7 @@ int subscribe_topic(char *topic)
 
     if ((rc = MQTTAsync_subscribe(client, topic, QOS, &opts)) != MQTTASYNC_SUCCESS)
     {
-        printf("Failed to start subscribe for topic %s, return code %d\n", topic, rc);
+        // printf("Failed to start subscribe for topic %s, return code %d\n", topic, rc);
 
         return EXIT_FAILURE;
     }
