@@ -66,7 +66,7 @@ void on_connect(void *context, MQTTAsync_successData *response)
 // AO FALHAR A CONEXAO
 void on_connect_failure(void *context, MQTTAsync_failureData *response)
 {
-    printf("Connect failed, rc %d\n", response->code);
+    printf("Erro ao conectar, return code %d\n", response->code);
 }
 
 // AO INSCREVER O CLIENTE
@@ -78,7 +78,7 @@ void on_subscribe(void *context, MQTTAsync_successData *response)
 // AO FALHAR A INSCRICAO
 void on_subscribe_failure(void *context, MQTTAsync_failureData *response)
 {
-    // printf("Subscribe failed, rc %d\n", response->code);
+    // DO NOTHING
 }
 
 // AO RECEBER UMA MENSAGEM
@@ -122,8 +122,6 @@ int subscribe_topic(char *topic)
 
     if ((rc = MQTTAsync_subscribe(client, topic, QOS, &opts)) != MQTTASYNC_SUCCESS)
     {
-        // printf("Failed to start subscribe for topic %s, return code %d\n", topic, rc);
-
         return EXIT_FAILURE;
     }
 

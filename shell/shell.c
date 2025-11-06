@@ -7,6 +7,7 @@
 #include "../message/message.h"
 #include "../user/user.h"
 
+// MENU DE COMANDOS
 void *run_shell(void *arg)
 {
     system("clear");

@@ -1,10 +1,9 @@
 #include "../headers.h"
 
-#include "client/status_publisher.h"
-#include "shell/shell.h"
-
 #include "../client/client.h"
 #include "../message/message.h"
+#include "client/status_publisher.h"
+#include "shell/shell.h"
 
 pthread_t thread_status, thread_shell;
 

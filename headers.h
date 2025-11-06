@@ -79,8 +79,8 @@ typedef struct
 typedef struct Users
 {
     char username[100];
-    int online;
-    char last_seen[100];
+    int online;          // 1 = online, 0 = offline
+    char last_seen[100]; // ultima vez que o usuario mandou uma mensagem
     struct Users *next;
 } Users;
 

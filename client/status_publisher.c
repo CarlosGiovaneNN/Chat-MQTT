@@ -5,6 +5,7 @@
 
 void verify_others_connection_status();
 
+// ENVIA STATUS DE CONEXAO PERIODICAMENTE
 void *run_status_publisher(void *arg)
 {
     int count = 0;
@@ -25,7 +26,8 @@ void *run_status_publisher(void *arg)
     return NULL;
 }
 
-void verify_others_connection_status() // - X
+// VERIFICA O STATUS DE CONEXAO DOS OUTROS USUARIOS, CASO SEJA MAIOR QUE 2 MINUTOS, O STATUS É ALTERADO
+void verify_others_connection_status()
 {
     time_t now;
     time(&now);

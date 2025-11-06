@@ -40,9 +40,6 @@ void on_send(void *context, MQTTAsync_successData *response)
 {
     Send_Context *ctx = (Send_Context *)context;
 
-    // if (strcmp(ctx->topic, "USERS") != 0)
-    //  printf("Message delivered successfully\n");
-
     free(ctx);
 }
 
@@ -50,8 +47,6 @@ void on_send(void *context, MQTTAsync_successData *response)
 void on_send_failure(void *context, MQTTAsync_failureData *response)
 {
     Send_Context *ctx = (Send_Context *)context;
-
-    // printf("Failed to deliver message, rc %d\n", response->code);
 
     free(ctx);
 }
@@ -260,12 +255,7 @@ void print_unread_messages()
 void read_pending_messages_control()
 {
     pthread_mutex_lock(&mutex_control);
-    // printf("read_pending_messages_control 1\n");
-
-    // printf("antes do lock no gruops 24\n");
     pthread_mutex_lock(&mutex_groups);
-    // printf("depois do lock no gruops\n");
-    // printf("read_pending_messages_control 2\n");
 
     Group *current_group = groups;
 
@@ -309,11 +299,8 @@ void read_pending_messages_control()
         current_group = current_group->next;
     }
 
-    // printf("antes do unlock no gruops\n");
     pthread_mutex_unlock(&mutex_groups);
-    // printf("depois do unlock no gruops 24\n");
     pthread_mutex_unlock(&mutex_control);
-    // printf("read_pending_messages_control 3\n");
 }
 
 // LISTA MENSAGENS DE CONTROLE E PERGUNTA QUAL DESEJA RESPONDER
@@ -426,7 +413,6 @@ void control_msg()
 
             remove_participant_from_group(get_group_by_name(group_name), user_id);
 
-
             send_message(message, "GROUPS");
         }
         else if (msg->type == MESSAGE_CHAT_INVITATION)
@@ -444,7 +430,6 @@ void control_msg()
 // AO RECEBER MENSAGEM DE QUALQUER TOPICO
 void on_recv_message(MQTTAsync_message *message, char *topic)
 {
-    // printf("%s\n", (char *)message->payload);
     char from[100] = {0}, date[100] = {0}, msg[100] = {0};
     parse_message((char *)message->payload, from, date, msg);
 
@@ -680,7 +665,6 @@ int send_message(char msg[], char topic[])
     if (!payload)
     {
         free(prefix);
-        // printf("Erro ao alocar payload para send_message \n");
         return EXIT_FAILURE;
     }
 
@@ -705,7 +689,6 @@ int send_message(char msg[], char topic[])
     char *flaged_payload = malloc(flag_payload_len + 1);
     if (!flaged_payload)
     {
-        // printf("Erro ao alocar flaged_payload\n");
         return EXIT_FAILURE;
     }
 
